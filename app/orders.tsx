@@ -5,9 +5,11 @@ import { useCart } from "./lib/cart";
 import { products } from "./lib/data";
 import { getOrders, getSellerProducts, type LocalOrder } from "./lib/storage";
 import { useTheme } from "./theme/ThemeProvider";
+import { useT } from "./i18n/useT";
 
 export default function OrdersScreen() {
   const { colors } = useTheme();
+  const { t } = useT();
   const { addItem, clearCart } = useCart();
   const [orders, setOrders] = useState<LocalOrder[]>([]);
   const [toast, setToast] = useState("");
@@ -105,11 +107,11 @@ export default function OrdersScreen() {
         </Pressable>
 
         <Text style={{ marginTop: 14, fontSize: 24, fontWeight: "800", color: colors.text }}>
-          Orders
+          {t("orders")}
         </Text>
 
         {orders.length === 0 ? (
-          <Text style={{ marginTop: 12, color: colors.mutedText }}>No orders yet.</Text>
+          <Text style={{ marginTop: 12, color: colors.mutedText }}>{t("no_orders")}</Text>
         ) : null}
 
         <View style={{ marginTop: 12, gap: 12 }}>

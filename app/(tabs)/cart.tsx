@@ -15,10 +15,12 @@ import { saveOrder, type LocalOrder } from "../lib/storage";
 import { businessName, upiId, whatsappNumber } from "../lib/config";
 import { useTheme } from "../theme/ThemeProvider";
 import { useMemo, useState } from "react";
+import { useT } from "../i18n/useT";
 
 export default function Cart() {
   const { items, addItem, decItem } = useCart();
   const { colors } = useTheme();
+  const { t } = useT();
   const [showUpiModal, setShowUpiModal] = useState(false);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
@@ -124,7 +126,7 @@ export default function Cart() {
         }}
       >
         <Text style={{ fontSize: 20, fontWeight: "800", color: colors.text }}>
-          Cart is empty 🛒
+          {t("cart_empty")} 🛒
         </Text>
         <Text style={{ marginTop: 8, color: colors.mutedText }}>
           Add items from Home or Product pages.
@@ -287,7 +289,7 @@ export default function Cart() {
             alignItems: "center",
           }}
         >
-          <Text style={{ color: colors.text, fontWeight: "800" }}>Pay via UPI</Text>
+          <Text style={{ color: colors.text, fontWeight: "800" }}>{t("pay_via_upi")}</Text>
         </Pressable>
 
         <Pressable
@@ -301,7 +303,7 @@ export default function Cart() {
           }}
         >
           <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>
-            Checkout on WhatsApp
+            {t("checkout_whatsapp")}
           </Text>
         </Pressable>
       </View>
@@ -329,7 +331,7 @@ export default function Cart() {
               borderColor: colors.border,
             }}
           >
-            <Text style={{ color: colors.text, fontSize: 20, fontWeight: "800" }}>Pay via UPI</Text>
+            <Text style={{ color: colors.text, fontSize: 20, fontWeight: "800" }}>{t("pay_via_upi")}</Text>
             <Text style={{ color: colors.mutedText, marginTop: 6 }}>
               UPI ID: {upiId || "Not set in Profile settings"}
             </Text>
@@ -364,7 +366,7 @@ export default function Cart() {
                 alignItems: "center",
               }}
             >
-              <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>Open UPI App</Text>
+              <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>{t("open_upi_app")}</Text>
             </Pressable>
 
             <Pressable

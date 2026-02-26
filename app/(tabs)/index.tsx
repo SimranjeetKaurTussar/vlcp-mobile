@@ -13,10 +13,12 @@ import { useCart } from "../lib/cart";
 import { router, useFocusEffect } from "expo-router";
 import { useTheme } from "../theme/ThemeProvider";
 import { getSellerProducts, type SellerProduct } from "../lib/storage";
+import { useT } from "../i18n/useT";
 
 export default function Home() {
   const { items, addItem, decItem } = useCart();
   const { colors } = useTheme();
+  const { t } = useT();
 
   const [query, setQuery] = useState("");
   const [activeCat, setActiveCat] = useState<string>("All");
@@ -72,7 +74,7 @@ export default function Home() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 90 }}>
-        <Text style={{ fontSize: 26, fontWeight: "800", color: colors.text }}>VLCP</Text>
+        <Text style={{ fontSize: 26, fontWeight: "800", color: colors.text }}>{t("home_title")}</Text>
         <Text style={{ marginTop: 6, color: colors.mutedText }}>
           Organic & handmade products from your village
         </Text>
@@ -81,7 +83,7 @@ export default function Home() {
         <TextInput
           value={query}
           onChangeText={setQuery}
-          placeholder="Search products or sellers..."
+          placeholder={t("search_placeholder")}
           style={{
             marginTop: 14,
             borderWidth: 1,
@@ -204,7 +206,7 @@ export default function Home() {
                           showToast("Added to cart ✅");
                         }}
                       >
-                        <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>Add</Text>
+                        <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>{t("add_to_cart")}</Text>
                       </Pressable>
                     );
                   }

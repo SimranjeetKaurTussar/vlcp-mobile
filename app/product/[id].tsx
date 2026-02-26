@@ -6,11 +6,13 @@ import { useEffect, useRef, useState } from "react";
 import { useTheme } from "../theme/ThemeProvider";
 import { businessName, whatsappNumber } from "../lib/config";
 import { getStoredAddress } from "../lib/storage";
+import { useT } from "../i18n/useT";
 
 export default function ProductDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { addItem, decItem, items } = useCart();
   const { colors } = useTheme();
+  const { t } = useT();
 
   const [toast, setToast] = useState("");
   const toastAnim = useRef(new Animated.Value(0)).current;
@@ -213,7 +215,7 @@ Total: ₹${total}`;
             marginBottom: 12,
           }}
         >
-          <Text style={{ fontSize: 16, fontWeight: "900", color: colors.text }}>Quantity</Text>
+          <Text style={{ fontSize: 16, fontWeight: "900", color: colors.text }}>{t("quantity")}</Text>
 
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <Pressable
@@ -268,7 +270,7 @@ Total: ₹${total}`;
             }}
           >
             <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>
-              {qty === 0 ? "Add to Cart" : `Go to Cart (${qty})`}
+              {qty === 0 ? t("add_to_cart") : `${t("go_to_cart")} (${qty})`}
             </Text>
           </Pressable>
 
@@ -283,7 +285,7 @@ Total: ₹${total}`;
               alignItems: "center",
             }}
           >
-            <Text style={{ fontWeight: "900", color: colors.text }}>Buy</Text>
+            <Text style={{ fontWeight: "900", color: colors.text }}>{t("buy")}</Text>
           </Pressable>
         </View>
       </View>

@@ -11,10 +11,12 @@ import {
   upiId,
   whatsappNumber,
 } from "../lib/config";
-import { getStoredAddress, setStoredAddress } from "../lib/storage";
+import { getStoredAddress, setStoredAddress, type AppLanguage } from "../lib/storage";
+import { useT } from "../i18n/useT";
 
 export default function Profile() {
   const { mode, setMode, colors } = useTheme();
+  const { t, language, setLanguage } = useT();
   const [name, setName] = useState(businessName);
   const [number, setNumber] = useState(whatsappNumber);
   const [address, setAddress] = useState("");
@@ -52,7 +54,7 @@ export default function Profile() {
       style={{ flex: 1, backgroundColor: colors.background }}
       contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
     >
-      <Text style={{ fontSize: 20, fontWeight: "700", color: colors.text }}>Profile</Text>
+      <Text style={{ fontSize: 20, fontWeight: "700", color: colors.text }}>{t("profile_title")}</Text>
 
       <Text style={{ marginTop: 24, color: colors.mutedText, fontWeight: "600" }}>
         Theme
@@ -101,7 +103,7 @@ export default function Profile() {
           backgroundColor: colors.surface,
         }}
       >
-        <Text style={{ color: colors.text, fontWeight: "700" }}>View Orders</Text>
+        <Text style={{ color: colors.text, fontWeight: "700" }}>{t("view_orders")}</Text>
       </Pressable>
 
       <Text style={{ marginTop: 28, color: colors.mutedText, fontWeight: "600" }}>
@@ -188,6 +190,37 @@ export default function Profile() {
         }}
       />
 
+      <Text style={{ marginTop: 20, color: colors.mutedText, fontWeight: "600" }}>
+        {t("profile_language")}
+      </Text>
+      <View style={{ flexDirection: "row", marginTop: 10, gap: 10 }}>
+        {([
+          { code: "pa", label: "Punjabi 🇮🇳" },
+          { code: "en", label: "English 🇬🇧" },
+        ] as const).map((option) => {
+          const active = language === option.code;
+
+          return (
+            <Pressable
+              key={option.code}
+              onPress={() => setLanguage(option.code as AppLanguage)}
+              style={{
+                paddingVertical: 10,
+                paddingHorizontal: 14,
+                borderRadius: 999,
+                borderWidth: 1,
+                borderColor: active ? colors.primary : colors.border,
+                backgroundColor: active ? colors.primary : colors.surface,
+              }}
+            >
+              <Text style={{ color: active ? colors.onPrimary : colors.text, fontWeight: "700" }}>
+                {option.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
       <Pressable
         onPress={saveBusinessSettings}
         style={{
@@ -198,7 +231,7 @@ export default function Profile() {
           alignItems: "center",
         }}
       >
-        <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>Save Settings</Text>
+        <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>{t("save_settings")}</Text>
       </Pressable>
     </ScrollView>
   );

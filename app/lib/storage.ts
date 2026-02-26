@@ -36,6 +36,7 @@ const BUSINESS_NAME_KEY = "vlcp:businessName";
 const WHATSAPP_NUMBER_KEY = "vlcp:whatsappNumber";
 const UPI_ID_KEY = "vlcp:upiId";
 const USER_ADDRESS_KEY = "vlcp:userAddress";
+const LANGUAGE_KEY = "vlcp:language";
 export const SELLER_PRODUCTS_KEY = "seller_products";
 export const ORDERS_KEY = "orders_history";
 
@@ -83,6 +84,23 @@ export async function setStoredAddress(address: string) {
 
 export async function setStoredUpiId(upiId: string) {
   await AsyncStorage.setItem(UPI_ID_KEY, upiId.trim());
+}
+
+
+export type AppLanguage = "pa" | "en";
+
+export async function getStoredLanguage(): Promise<AppLanguage> {
+  const value = await AsyncStorage.getItem(LANGUAGE_KEY);
+
+  if (value === "en" || value === "pa") {
+    return value;
+  }
+
+  return "pa";
+}
+
+export async function setStoredLanguage(language: AppLanguage) {
+  await AsyncStorage.setItem(LANGUAGE_KEY, language);
 }
 
 export async function getSellerProducts(): Promise<SellerProduct[]> {
