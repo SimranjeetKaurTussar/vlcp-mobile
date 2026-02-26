@@ -1,9 +1,10 @@
-import { View, Text, ScrollView, Pressable, Animated } from "react-native";
+import { View, Text, ScrollView, Pressable, Animated, Alert, Linking } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { products } from "../lib/data";
 import { useCart } from "../lib/cart";
 import { useRef, useState } from "react";
 import { useTheme } from "../theme/ThemeProvider";
+import { businessName, whatsappNumber } from "../lib/config";
 
 export default function ProductDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -54,6 +55,47 @@ export default function ProductDetail() {
   // qty in cart
   const cartItem = items.find((i) => i.id === product.id);
   const qty = cartItem?.qty ?? 0;
+
+  async function openWhatsAppOrder() {
+    if (qty === 0) {
+      showToast("Add quantity first");
+      return;
+    }
+
+    const total = qty * product.price;
+    const message = `Hi ${businessName}, I want to order:
+Product: ${product.name}
+Qty: ${qty}
+Price: ₹${product.price}/${product.unit}
+Total: ₹${total}`;
+    const encoded = encodeURIComponent(message);
+
+    const appUrl = `whatsapp://send?phone=${whatsappNumber}&text=${encoded}`;
+    const webUrl = `https://wa.me/${whatsappNumber}?text=${encoded}`;
+
+    const hasWhatsApp = await Linking.canOpenURL(appUrl);
+
+    if (hasWhatsApp) {
+      await Linking.openURL(appUrl);
+      return;
+    }
+
+    const canOpenWeb = await Linking.canOpenURL(webUrl);
+
+    if (canOpenWeb) {
+      Alert.alert(
+        "WhatsApp not installed",
+        "No worries — opening WhatsApp web checkout in your browser."
+      );
+      await Linking.openURL(webUrl);
+      return;
+    }
+
+    Alert.alert(
+      "Unable to open WhatsApp",
+      "Please install WhatsApp and try again."
+    );
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -171,6 +213,7 @@ export default function ProductDetail() {
           </Pressable>
 
           <Pressable
+            onPress={openWhatsAppOrder}
             style={{
               flex: 1,
               borderWidth: 1,

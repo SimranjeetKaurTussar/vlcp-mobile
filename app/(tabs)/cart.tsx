@@ -1,10 +1,49 @@
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, Alert, Linking } from "react-native";
 import { useCart } from "../lib/cart";
 import { useTheme } from "../theme/ThemeProvider";
+import { businessName, whatsappNumber } from "../lib/config";
 
 export default function Cart() {
   const { items, addItem, decItem, removeItem, total } = useCart();
   const { colors } = useTheme();
+
+  async function checkoutOnWhatsApp() {
+    const lines = items.map((item) => {
+      const amount = item.price * item.qty;
+      return `${item.name} x ${item.qty} = ₹${amount}`;
+    });
+
+    const message = `Hi ${businessName}, I want to order:
+${lines.join("\n")}
+Total: ₹${total}`;
+    const encoded = encodeURIComponent(message);
+
+    const appUrl = `whatsapp://send?phone=${whatsappNumber}&text=${encoded}`;
+    const webUrl = `https://wa.me/${whatsappNumber}?text=${encoded}`;
+
+    const hasWhatsApp = await Linking.canOpenURL(appUrl);
+
+    if (hasWhatsApp) {
+      await Linking.openURL(appUrl);
+      return;
+    }
+
+    const canOpenWeb = await Linking.canOpenURL(webUrl);
+
+    if (canOpenWeb) {
+      Alert.alert(
+        "WhatsApp not installed",
+        "No worries — opening WhatsApp web checkout in your browser."
+      );
+      await Linking.openURL(webUrl);
+      return;
+    }
+
+    Alert.alert(
+      "Unable to open WhatsApp",
+      "Please install WhatsApp and try again."
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -109,6 +148,21 @@ export default function Cart() {
           Total: ₹{total}
         </Text>
       </View>
+
+      <Pressable
+        onPress={checkoutOnWhatsApp}
+        style={{
+          marginTop: 14,
+          backgroundColor: colors.primary,
+          paddingVertical: 14,
+          borderRadius: 12,
+          alignItems: "center",
+        }}
+      >
+        <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>
+          Checkout on WhatsApp
+        </Text>
+      </Pressable>
     </View>
   );
 }
