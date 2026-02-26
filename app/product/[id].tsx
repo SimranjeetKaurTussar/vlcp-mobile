@@ -3,10 +3,12 @@ import { useLocalSearchParams, router } from "expo-router";
 import { products } from "../lib/data";
 import { useCart } from "../lib/cart";
 import { useRef, useState } from "react";
+import { useTheme } from "../theme/ThemeProvider";
 
 export default function ProductDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { addItem, decItem, items } = useCart();
+  const { colors } = useTheme();
 
   const [toast, setToast] = useState("");
   const toastAnim = useRef(new Animated.Value(0)).current;
@@ -34,8 +36,15 @@ export default function ProductDetail() {
 
   if (!product) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ fontSize: 18, fontWeight: "800" }}>
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: colors.background,
+        }}
+      >
+        <Text style={{ fontSize: 18, fontWeight: "800", color: colors.text }}>
           Product not found
         </Text>
       </View>
@@ -47,17 +56,17 @@ export default function ProductDetail() {
   const qty = cartItem?.qty ?? 0;
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 160 }}>
         <Pressable onPress={() => router.back()}>
-          <Text style={{ fontSize: 16, fontWeight: "800" }}>← Back</Text>
+          <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>← Back</Text>
         </Pressable>
 
-        <Text style={{ marginTop: 14, fontSize: 26, fontWeight: "900" }}>
+        <Text style={{ marginTop: 14, fontSize: 26, fontWeight: "900", color: colors.text }}>
           {product.name}
         </Text>
 
-        <Text style={{ marginTop: 6, opacity: 0.7 }}>
+        <Text style={{ marginTop: 6, color: colors.mutedText }}>
           Seller: {product.seller} • {product.category}
         </Text>
 
@@ -65,16 +74,16 @@ export default function ProductDetail() {
           style={{
             marginTop: 18,
             borderWidth: 1,
-            borderColor: "#eee",
+            borderColor: colors.border,
             borderRadius: 16,
             padding: 14,
-            backgroundColor: "white",
+            backgroundColor: colors.surface,
           }}
         >
-          <Text style={{ fontSize: 18, fontWeight: "900" }}>
+          <Text style={{ fontSize: 18, fontWeight: "900", color: colors.text }}>
             ₹{product.price} / {product.unit}
           </Text>
-          <Text style={{ marginTop: 10, opacity: 0.75 }}>
+          <Text style={{ marginTop: 10, color: colors.mutedText }}>
             Demo description. Later we add photos, delivery info etc.
           </Text>
         </View>
@@ -89,8 +98,8 @@ export default function ProductDetail() {
           bottom: 0,
           padding: 16,
           borderTopWidth: 1,
-          borderTopColor: "#eee",
-          backgroundColor: "white",
+          borderTopColor: colors.border,
+          backgroundColor: colors.surface,
         }}
       >
         {/* Qty Row */}
@@ -102,23 +111,23 @@ export default function ProductDetail() {
             marginBottom: 12,
           }}
         >
-          <Text style={{ fontSize: 16, fontWeight: "900" }}>Quantity</Text>
+          <Text style={{ fontSize: 16, fontWeight: "900", color: colors.text }}>Quantity</Text>
 
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <Pressable
               onPress={() => qty > 0 && decItem(product.id)}
               style={{
-                backgroundColor: "black",
+                backgroundColor: colors.primary,
                 paddingHorizontal: 14,
                 paddingVertical: 8,
                 borderRadius: 12,
                 opacity: qty > 0 ? 1 : 0.4,
               }}
             >
-              <Text style={{ color: "white", fontWeight: "900" }}>−</Text>
+              <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>−</Text>
             </Pressable>
 
-            <Text style={{ fontSize: 16, fontWeight: "900" }}>{qty}</Text>
+            <Text style={{ fontSize: 16, fontWeight: "900", color: colors.text }}>{qty}</Text>
 
             <Pressable
               onPress={() => {
@@ -126,13 +135,13 @@ export default function ProductDetail() {
                 showToast("Added ✅");
               }}
               style={{
-                backgroundColor: "black",
+                backgroundColor: colors.primary,
                 paddingHorizontal: 14,
                 paddingVertical: 8,
                 borderRadius: 12,
               }}
             >
-              <Text style={{ color: "white", fontWeight: "900" }}>+</Text>
+              <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>+</Text>
             </Pressable>
           </View>
         </View>
@@ -150,13 +159,13 @@ export default function ProductDetail() {
             }}
             style={{
               flex: 1,
-              backgroundColor: "black",
+              backgroundColor: colors.primary,
               paddingVertical: 14,
               borderRadius: 14,
               alignItems: "center",
             }}
           >
-            <Text style={{ color: "white", fontWeight: "900" }}>
+            <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>
               {qty === 0 ? "Add to Cart" : `Go to Cart (${qty})`}
             </Text>
           </Pressable>
@@ -165,13 +174,13 @@ export default function ProductDetail() {
             style={{
               flex: 1,
               borderWidth: 1,
-              borderColor: "#ddd",
+              borderColor: colors.border,
               paddingVertical: 14,
               borderRadius: 14,
               alignItems: "center",
             }}
           >
-            <Text style={{ fontWeight: "900" }}>Buy</Text>
+            <Text style={{ fontWeight: "900", color: colors.text }}>Buy</Text>
           </Pressable>
         </View>
       </View>
@@ -198,14 +207,14 @@ export default function ProductDetail() {
         >
           <View
             style={{
-              backgroundColor: "black",
+              backgroundColor: colors.primary,
               paddingVertical: 12,
               paddingHorizontal: 14,
               borderRadius: 14,
               alignItems: "center",
             }}
           >
-            <Text style={{ color: "white", fontWeight: "800" }}>
+            <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>
               {toast}
             </Text>
           </View>
