@@ -6,7 +6,9 @@ import {
   businessName,
   loadBusinessConfig,
   updateBusinessName,
+  updateUpiId,
   updateWhatsAppNumber,
+  upiId,
   whatsappNumber,
 } from "../lib/config";
 import { getStoredAddress, setStoredAddress } from "../lib/storage";
@@ -16,12 +18,14 @@ export default function Profile() {
   const [name, setName] = useState(businessName);
   const [number, setNumber] = useState(whatsappNumber);
   const [address, setAddress] = useState("");
+  const [upi, setUpi] = useState(upiId);
 
   useEffect(() => {
     async function hydrateBusinessSettings() {
       await loadBusinessConfig();
       setName(businessName);
       setNumber(whatsappNumber);
+      setUpi(upiId);
       setAddress(await getStoredAddress());
     }
 
@@ -33,10 +37,12 @@ export default function Profile() {
 
     await updateBusinessName(name);
     await updateWhatsAppNumber(cleanNumber);
+    await updateUpiId(upi);
     await setStoredAddress(address);
 
     setName(name.trim() || "VLCP");
     setNumber(cleanNumber);
+    setUpi(upi.trim());
     setAddress(address.trim());
     Alert.alert("Saved", "Profile and business settings updated.");
   }
@@ -163,6 +169,24 @@ export default function Profile() {
       <Text style={{ marginTop: 6, color: colors.mutedText, fontSize: 12 }}>
         Digits only (country code + number), e.g. 919876543210
       </Text>
+
+      <Text style={{ marginTop: 14, color: colors.text, fontWeight: "600" }}>UPI ID</Text>
+      <TextInput
+        value={upi}
+        onChangeText={setUpi}
+        placeholder="example@upi"
+        autoCapitalize="none"
+        autoCorrect={false}
+        style={{
+          marginTop: 8,
+          borderWidth: 1,
+          borderColor: colors.border,
+          borderRadius: 12,
+          padding: 12,
+          backgroundColor: colors.surface,
+          color: colors.text,
+        }}
+      />
 
       <Pressable
         onPress={saveBusinessSettings}

@@ -1,18 +1,36 @@
 import { router } from "expo-router";
-import { Alert, Linking, Pressable, ScrollView, Text, View } from "react-native";
+import {
+  Alert,
+  Image,
+  Linking,
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import * as Notifications from "expo-notifications";
 import { useCart } from "../lib/cart";
 import { saveOrder, type LocalOrder } from "../lib/storage";
-import { businessName, whatsappNumber } from "../lib/config";
+import { businessName, upiId, whatsappNumber } from "../lib/config";
 import { useTheme } from "../theme/ThemeProvider";
+import { useMemo, useState } from "react";
 
 export default function Cart() {
   const { items, addItem, decItem } = useCart();
   const { colors } = useTheme();
+  const [showUpiModal, setShowUpiModal] = useState(false);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
   const deliveryFee = 0;
   const grandTotal = subtotal + deliveryFee;
+
+  const upiPaymentUrl = useMemo(() => {
+    const amount = grandTotal.toFixed(2);
+    return `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(
+      businessName
+    )}&am=${encodeURIComponent(amount)}&cu=INR`;
+  }, [grandTotal]);
 
   async function checkoutOnWhatsApp() {
     if (items.length === 0) {
@@ -77,6 +95,21 @@ export default function Cart() {
     }
 
     Alert.alert("Unable to open WhatsApp", "Please install WhatsApp and try again.");
+  }
+
+  async function openUpiApp() {
+    if (!upiId.trim()) {
+      Alert.alert("UPI ID required", "Please set a UPI ID in Profile settings.");
+      return;
+    }
+
+    const canOpen = await Linking.canOpenURL(upiPaymentUrl);
+    if (!canOpen) {
+      Alert.alert("UPI app not found", "Please install a UPI app to continue.");
+      return;
+    }
+
+    await Linking.openURL(upiPaymentUrl);
   }
 
   if (items.length === 0) {
@@ -181,9 +214,7 @@ export default function Cart() {
                   </Pressable>
                 </View>
 
-                <Text style={{ fontWeight: "800", color: colors.text }}>
-                  ₹{lineTotal}
-                </Text>
+                <Text style={{ fontWeight: "800", color: colors.text }}>₹{lineTotal}</Text>
               </View>
             </View>
           );
@@ -245,6 +276,21 @@ export default function Cart() {
         </Text>
 
         <Pressable
+          onPress={() => setShowUpiModal(true)}
+          style={{
+            marginTop: 10,
+            backgroundColor: colors.surface,
+            borderWidth: 1,
+            borderColor: colors.border,
+            paddingVertical: 14,
+            borderRadius: 12,
+            alignItems: "center",
+          }}
+        >
+          <Text style={{ color: colors.text, fontWeight: "800" }}>Pay via UPI</Text>
+        </Pressable>
+
+        <Pressable
           onPress={checkoutOnWhatsApp}
           style={{
             marginTop: 10,
@@ -260,20 +306,83 @@ export default function Cart() {
         </Pressable>
       </View>
 
-      <Pressable
-        onPress={checkoutOnWhatsApp}
-        style={{
-          marginTop: 14,
-          backgroundColor: colors.primary,
-          paddingVertical: 14,
-          borderRadius: 12,
-          alignItems: "center",
-        }}
+      <Modal
+        visible={showUpiModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowUpiModal(false)}
       >
-        <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>
-          Checkout on WhatsApp
-        </Text>
-      </Pressable>
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.4)",
+            justifyContent: "flex-end",
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              padding: 20,
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}
+          >
+            <Text style={{ color: colors.text, fontSize: 20, fontWeight: "800" }}>Pay via UPI</Text>
+            <Text style={{ color: colors.mutedText, marginTop: 6 }}>
+              UPI ID: {upiId || "Not set in Profile settings"}
+            </Text>
+            <Text style={{ color: colors.text, marginTop: 4, fontWeight: "700" }}>
+              Amount: ₹{grandTotal.toFixed(2)}
+            </Text>
+
+            <View style={{ alignItems: "center", marginTop: 16 }}>
+              {upiId ? (
+                <Image
+                  source={{
+                    uri: `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
+                      upiPaymentUrl
+                    )}`,
+                  }}
+                  style={{ width: 180, height: 180, borderRadius: 12, backgroundColor: "#FFFFFF" }}
+                />
+              ) : (
+                <Text style={{ color: colors.mutedText, textAlign: "center" }}>
+                  Add your UPI ID in Profile to generate a payment QR.
+                </Text>
+              )}
+            </View>
+
+            <Pressable
+              onPress={openUpiApp}
+              style={{
+                marginTop: 18,
+                backgroundColor: colors.primary,
+                paddingVertical: 14,
+                borderRadius: 12,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>Open UPI App</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => setShowUpiModal(false)}
+              style={{
+                marginTop: 10,
+                borderWidth: 1,
+                borderColor: colors.border,
+                paddingVertical: 12,
+                borderRadius: 12,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ color: colors.text, fontWeight: "700" }}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

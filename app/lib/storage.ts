@@ -34,6 +34,7 @@ export type LocalOrder = {
 const THEME_MODE_KEY = "vlcp:themeMode";
 const BUSINESS_NAME_KEY = "vlcp:businessName";
 const WHATSAPP_NUMBER_KEY = "vlcp:whatsappNumber";
+const UPI_ID_KEY = "vlcp:upiId";
 const USER_ADDRESS_KEY = "vlcp:userAddress";
 export const SELLER_PRODUCTS_KEY = "seller_products";
 export const ORDERS_KEY = "orders_history";
@@ -72,8 +73,16 @@ export async function getStoredAddress() {
   return (await AsyncStorage.getItem(USER_ADDRESS_KEY)) ?? "";
 }
 
+export async function getStoredUpiId() {
+  return (await AsyncStorage.getItem(UPI_ID_KEY)) ?? "";
+}
+
 export async function setStoredAddress(address: string) {
   await AsyncStorage.setItem(USER_ADDRESS_KEY, address.trim());
+}
+
+export async function setStoredUpiId(upiId: string) {
+  await AsyncStorage.setItem(UPI_ID_KEY, upiId.trim());
 }
 
 export async function getSellerProducts(): Promise<SellerProduct[]> {
