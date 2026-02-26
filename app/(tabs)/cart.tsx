@@ -230,6 +230,21 @@ export default function Cart() {
           </Text>
         </Pressable>
       </View>
+
+      <Pressable
+        onPress={checkoutOnWhatsApp}
+        style={{
+          marginTop: 14,
+          backgroundColor: colors.primary,
+          paddingVertical: 14,
+          borderRadius: 12,
+          alignItems: "center",
+        }}
+      >
+        <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>
+          Checkout on WhatsApp
+        </Text>
+      </Pressable>
     </View>
   );
 }
