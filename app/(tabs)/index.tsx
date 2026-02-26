@@ -13,7 +13,7 @@ import { router } from "expo-router";
 import { useTheme } from "../theme/ThemeProvider";
 
 export default function Home() {
-  const { addItem } = useCart();
+  const { items, addItem, decItem } = useCart();
   const { colors } = useTheme();
 
   const [query, setQuery] = useState("");
@@ -144,24 +144,84 @@ export default function Home() {
                   justifyContent: "space-between",
                 }}
               >
-                <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>
-                  ₹{p.price} / {p.unit}
-                </Text>
+                <View>
+                  <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>
+                    ₹{p.price} / {p.unit}
+                  </Text>
+                  {(() => {
+                    const cartItem = items.find((i) => i.id === p.id);
+                    const qty = cartItem?.qty ?? 0;
 
-                <Pressable
-                  style={{
-                    backgroundColor: colors.primary,
-                    paddingVertical: 10,
-                    paddingHorizontal: 14,
-                    borderRadius: 12,
-                  }}
-                  onPress={() => {
-                    addItem(p);
-                    showToast("Added to cart ✅");
-                  }}
-                >
-                  <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>Add</Text>
-                </Pressable>
+                    return qty > 0 ? (
+                      <Text style={{ marginTop: 4, color: colors.mutedText, fontSize: 13 }}>
+                        In cart: {qty}
+                      </Text>
+                    ) : null;
+                  })()}
+                </View>
+
+                {(() => {
+                  const cartItem = items.find((i) => i.id === p.id);
+                  const qty = cartItem?.qty ?? 0;
+
+                  if (qty === 0) {
+                    return (
+                      <Pressable
+                        style={{
+                          backgroundColor: colors.primary,
+                          paddingVertical: 10,
+                          paddingHorizontal: 14,
+                          borderRadius: 12,
+                        }}
+                        onPress={(event) => {
+                          event.stopPropagation();
+                          addItem(p);
+                          showToast("Added to cart ✅");
+                        }}
+                      >
+                        <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>Add</Text>
+                      </Pressable>
+                    );
+                  }
+
+                  return (
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                      <Pressable
+                        onPress={(event) => {
+                          event.stopPropagation();
+                          decItem(p.id);
+                        }}
+                        style={{
+                          backgroundColor: colors.primary,
+                          paddingHorizontal: 12,
+                          paddingVertical: 8,
+                          borderRadius: 10,
+                        }}
+                      >
+                        <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>−</Text>
+                      </Pressable>
+
+                      <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>
+                        {qty}
+                      </Text>
+
+                      <Pressable
+                        onPress={(event) => {
+                          event.stopPropagation();
+                          addItem(p);
+                        }}
+                        style={{
+                          backgroundColor: colors.primary,
+                          paddingHorizontal: 12,
+                          paddingVertical: 8,
+                          borderRadius: 10,
+                        }}
+                      >
+                        <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>+</Text>
+                      </Pressable>
+                    </View>
+                  );
+                })()}
               </View>
             </Pressable>
           ))}
