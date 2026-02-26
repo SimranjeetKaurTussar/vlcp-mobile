@@ -37,7 +37,11 @@ export default function SellerDashboard() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-        <Text style={{ fontSize: 24, fontWeight: "800", color: colors.text }}>
+        <Pressable onPress={() => router.back()}>
+          <Text style={{ color: colors.text, fontWeight: "700" }}>← Back</Text>
+        </Pressable>
+
+        <Text style={{ marginTop: 12, fontSize: 24, fontWeight: "800", color: colors.text }}>
           Seller Dashboard
         </Text>
 

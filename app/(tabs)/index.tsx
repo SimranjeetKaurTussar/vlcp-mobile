@@ -23,6 +23,7 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const [activeCat, setActiveCat] = useState<string>("All");
   const [sellerProducts, setSellerProducts] = useState<SellerProduct[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
 
   const [toast, setToast] = useState<string>("");
   const toastAnim = useRef(new Animated.Value(0)).current;
@@ -50,8 +51,10 @@ export default function Home() {
   useFocusEffect(
     useCallback(() => {
       async function loadSellerProducts() {
+        setIsLoadingProducts(true);
         const stored = await getSellerProducts();
         setSellerProducts(stored);
+        setIsLoadingProducts(false);
       }
 
       loadSellerProducts();
@@ -140,6 +143,28 @@ export default function Home() {
         </Text>
 
         <View style={{ marginTop: 10, gap: 12 }}>
+
+
+          {isLoadingProducts ? (
+            <>
+              {[1, 2].map((key) => (
+                <View
+                  key={`skeleton_${key}`}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    borderRadius: 16,
+                    padding: 14,
+                    backgroundColor: colors.surface,
+                  }}
+                >
+                  <View style={{ height: 140, borderRadius: 12, backgroundColor: colors.background }} />
+                  <View style={{ marginTop: 10, height: 14, borderRadius: 8, backgroundColor: colors.background }} />
+                  <View style={{ marginTop: 8, height: 12, borderRadius: 8, backgroundColor: colors.background }} />
+                </View>
+              ))}
+            </>
+          ) : null}
           {filtered.map((p) => (
             <Pressable
               key={p.id}
@@ -253,10 +278,20 @@ export default function Home() {
             </Pressable>
           ))}
 
-          {filtered.length === 0 ? (
-            <Text style={{ marginTop: 10, color: colors.mutedText }}>
-              No products found.
-            </Text>
+          {!isLoadingProducts && filtered.length === 0 ? (
+            <View
+              style={{
+                marginTop: 10,
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 14,
+                padding: 14,
+                backgroundColor: colors.surface,
+              }}
+            >
+              <Text style={{ color: colors.text, fontWeight: "700" }}>No results found</Text>
+              <Text style={{ marginTop: 4, color: colors.mutedText }}>Try a different search or category.</Text>
+            </View>
           ) : null}
         </View>
       </ScrollView>

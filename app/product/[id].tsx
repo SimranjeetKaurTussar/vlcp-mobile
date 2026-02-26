@@ -84,6 +84,12 @@ export default function ProductDetail() {
 
 
   async function openWhatsAppOrder() {
+    const cleanWhatsAppNumber = whatsappNumber.replace(/\D/g, "");
+
+    if (!cleanWhatsAppNumber || cleanWhatsAppNumber.includes("X")) {
+      Alert.alert("WhatsApp number missing", "Please set a valid WhatsApp number in Profile settings.");
+      return;
+    }
     if (qty === 0) {
       showToast("Add quantity first");
       return;
@@ -97,8 +103,8 @@ Price: ₹${product.price}/${product.unit}
 Total: ₹${total}`;
     const encoded = encodeURIComponent(message);
 
-    const appUrl = `whatsapp://send?phone=${whatsappNumber}&text=${encoded}`;
-    const webUrl = `https://wa.me/${whatsappNumber}?text=${encoded}`;
+    const appUrl = `whatsapp://send?phone=${cleanWhatsAppNumber}&text=${encoded}`;
+    const webUrl = `https://wa.me/${cleanWhatsAppNumber}?text=${encoded}`;
 
     const hasWhatsApp = await Linking.canOpenURL(appUrl);
 

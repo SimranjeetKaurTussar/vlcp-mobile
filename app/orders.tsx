@@ -12,17 +12,20 @@ export default function OrdersScreen() {
   const { t } = useT();
   const { addItem, clearCart } = useCart();
   const [orders, setOrders] = useState<LocalOrder[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState("");
   const toastAnim = useRef(new Animated.Value(0)).current;
 
   useFocusEffect(
     useCallback(() => {
       async function load() {
+        setIsLoading(true);
         const stored = await getOrders();
         const sorted = [...stored].sort(
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
         setOrders(sorted);
+        setIsLoading(false);
       }
 
       load();
@@ -68,13 +71,13 @@ export default function OrdersScreen() {
       clearCart();
     }
 
-    let missing = false;
+    const missingItems: string[] = [];
 
     order.items.forEach((item) => {
       const found = allProducts.find((p) => p.id === item.id);
 
       if (!found) {
-        missing = true;
+        missingItems.push(item.name);
         return;
       }
 
@@ -83,8 +86,8 @@ export default function OrdersScreen() {
       }
     });
 
-    if (missing) {
-      Alert.alert("Some items no longer available");
+    if (missingItems.length > 0) {
+      Alert.alert("Some items no longer available", `${missingItems.join(", ")} were skipped.`);
     }
 
     showToast("Added to cart ✅");
@@ -110,11 +113,25 @@ export default function OrdersScreen() {
           {t("orders")}
         </Text>
 
-        {orders.length === 0 ? (
-          <Text style={{ marginTop: 12, color: colors.mutedText }}>{t("no_orders")}</Text>
+        {!isLoading && orders.length === 0 ? (
+          <View style={{ marginTop: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 14, padding: 14, backgroundColor: colors.surface }}>
+            <Text style={{ color: colors.text, fontWeight: "700" }}>{t("no_orders")}</Text>
+            <Text style={{ marginTop: 4, color: colors.mutedText }}>Your placed orders will appear here.</Text>
+          </View>
         ) : null}
 
         <View style={{ marginTop: 12, gap: 12 }}>
+          {isLoading ? (
+            <>
+              {[1, 2].map((key) => (
+                <View key={`order_skeleton_${key}`} style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 14, padding: 12, backgroundColor: colors.surface }}>
+                  <View style={{ height: 14, borderRadius: 8, backgroundColor: colors.background }} />
+                  <View style={{ marginTop: 8, height: 12, width: "60%", borderRadius: 8, backgroundColor: colors.background }} />
+                  <View style={{ marginTop: 10, height: 36, borderRadius: 10, backgroundColor: colors.background }} />
+                </View>
+              ))}
+            </>
+          ) : null}
           {orders.map((order) => (
             <View
               key={order.id}

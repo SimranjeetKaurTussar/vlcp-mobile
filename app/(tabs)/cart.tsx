@@ -35,6 +35,12 @@ export default function Cart() {
   }, [grandTotal]);
 
   async function checkoutOnWhatsApp() {
+    const cleanWhatsAppNumber = whatsappNumber.replace(/\D/g, "");
+
+    if (!cleanWhatsAppNumber || cleanWhatsAppNumber.includes("X")) {
+      Alert.alert("WhatsApp number missing", "Please set a valid WhatsApp number in Profile settings.");
+      return;
+    }
     if (items.length === 0) {
       Alert.alert("Cart is empty", "Please add items before checkout.");
       return;
@@ -77,8 +83,8 @@ export default function Cart() {
     )}\n\nSubtotal: ₹${subtotal}\nDelivery: ₹${deliveryFee}\nGrand Total: ₹${grandTotal}`;
     const encoded = encodeURIComponent(message);
 
-    const appUrl = `whatsapp://send?phone=${whatsappNumber}&text=${encoded}`;
-    const webUrl = `https://wa.me/${whatsappNumber}?text=${encoded}`;
+    const appUrl = `whatsapp://send?phone=${cleanWhatsAppNumber}&text=${encoded}`;
+    const webUrl = `https://wa.me/${cleanWhatsAppNumber}?text=${encoded}`;
 
     const canOpenApp = await Linking.canOpenURL(appUrl);
     if (canOpenApp) {
@@ -128,9 +134,19 @@ export default function Cart() {
         <Text style={{ fontSize: 20, fontWeight: "800", color: colors.text }}>
           {t("cart_empty")} 🛒
         </Text>
-        <Text style={{ marginTop: 8, color: colors.mutedText }}>
-          Add items from Home or Product pages.
-        </Text>
+        <View
+          style={{
+            marginTop: 10,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: 14,
+            padding: 14,
+            backgroundColor: colors.surface,
+            alignSelf: "stretch",
+          }}
+        >
+          <Text style={{ color: colors.mutedText, textAlign: "center" }}>Add items from Home or Product pages.</Text>
+        </View>
 
         <Pressable
           onPress={() => router.push("/(tabs)")}

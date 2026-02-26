@@ -45,7 +45,11 @@ export default function AddProduct() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 30 }}>
-        <Text style={{ fontSize: 24, fontWeight: "800", color: colors.text }}>Add Product</Text>
+        <Pressable onPress={() => router.back()}>
+          <Text style={{ color: colors.text, fontWeight: "700" }}>← Back</Text>
+        </Pressable>
+
+        <Text style={{ marginTop: 12, fontSize: 24, fontWeight: "800", color: colors.text }}>Add Product</Text>
 
         <Text style={{ marginTop: 14, color: colors.text, fontWeight: "600" }}>Name</Text>
         <TextInput

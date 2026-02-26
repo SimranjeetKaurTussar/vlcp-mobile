@@ -80,13 +80,13 @@ export default function OrderDetail() {
       clearCart();
     }
 
-    let missing = false;
+    const missingItems: string[] = [];
 
     order.items.forEach((item) => {
       const found = allProducts.find((p) => p.id === item.id);
 
       if (!found) {
-        missing = true;
+        missingItems.push(item.name);
         return;
       }
 
@@ -95,8 +95,8 @@ export default function OrderDetail() {
       }
     });
 
-    if (missing) {
-      Alert.alert("Some items no longer available");
+    if (missingItems.length > 0) {
+      Alert.alert("Some items no longer available", `${missingItems.join(", ")} were skipped.`);
     }
 
     showToast("Added to cart ✅");
