@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { useCart } from "./lib/cart";
 import { getOrders, type LocalOrder } from "./lib/storage";
 import { useTheme } from "./theme/ThemeProvider";
-import { useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 
 export default function OrdersScreen() {
   const { colors } = useTheme();
@@ -47,7 +47,11 @@ export default function OrdersScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 30 }}>
-        <Text style={{ fontSize: 24, fontWeight: "800", color: colors.text }}>
+        <Pressable onPress={() => router.back()}>
+          <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>← Back</Text>
+        </Pressable>
+
+        <Text style={{ marginTop: 14, fontSize: 24, fontWeight: "800", color: colors.text }}>
           Orders
         </Text>
 
