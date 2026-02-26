@@ -1,16 +1,19 @@
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { useCallback, useRef, useState } from "react";
+import { Alert, Animated, Pressable, ScrollView, Text, View } from "react-native";
 import * as Notifications from "expo-notifications";
 import { useCart } from "../lib/cart";
-import { getOrders, type LocalOrder, type OrderStatus, updateOrderStatus } from "../lib/storage";
+import { products } from "../lib/data";
+import { getOrders, getSellerProducts, type LocalOrder, type OrderStatus, updateOrderStatus } from "../lib/storage";
 import { useTheme } from "../theme/ThemeProvider";
 
 export default function OrderDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { addItem } = useCart();
+  const { addItem, clearCart } = useCart();
   const [order, setOrder] = useState<LocalOrder | null>(null);
+  const [toast, setToast] = useState("");
+  const toastAnim = useRef(new Animated.Value(0)).current;
 
   useFocusEffect(
     useCallback(() => {
@@ -22,6 +25,25 @@ export default function OrderDetail() {
       loadOrder();
     }, [id])
   );
+
+  function showToast(message: string) {
+    setToast(message);
+    toastAnim.setValue(0);
+
+    Animated.timing(toastAnim, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+
+    setTimeout(() => {
+      Animated.timing(toastAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => setToast(""));
+    }, 1200);
+  }
 
   async function changeStatus(status: OrderStatus) {
     if (!order) {
@@ -46,18 +68,47 @@ export default function OrderDetail() {
     }
   }
 
-  function handleReorder() {
+  async function reorder(replace: boolean) {
     if (!order) {
       return;
     }
 
+    const sellerProducts = await getSellerProducts();
+    const allProducts = [...products, ...sellerProducts];
+
+    if (replace) {
+      clearCart();
+    }
+
+    let missing = false;
+
     order.items.forEach((item) => {
+      const found = allProducts.find((p) => p.id === item.id);
+
+      if (!found) {
+        missing = true;
+        return;
+      }
+
       for (let i = 0; i < item.qty; i += 1) {
-        addItem({ id: item.id, name: item.name, price: item.price, unit: item.unit });
+        addItem(found);
       }
     });
 
+    if (missing) {
+      Alert.alert("Some items no longer available");
+    }
+
+    showToast("Added to cart ✅");
     router.push("/cart");
+  }
+
+  function handleReorder() {
+    Alert.alert("Reorder", "Replace current cart?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Add to existing cart", onPress: () => reorder(false) },
+      { text: "Replace", onPress: () => reorder(true) },
+    ]);
   }
 
   if (!order) {
@@ -159,6 +210,30 @@ export default function OrderDetail() {
           <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>Reorder</Text>
         </Pressable>
       </ScrollView>
+
+      {toast ? (
+        <Animated.View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            left: 20,
+            right: 20,
+            bottom: 20,
+            opacity: toastAnim,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: colors.primary,
+              borderRadius: 12,
+              paddingVertical: 10,
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>{toast}</Text>
+          </View>
+        </Animated.View>
+      ) : null}
     </View>
   );
 }

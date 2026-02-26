@@ -1,14 +1,17 @@
-import { useCallback, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
-import { useCart } from "./lib/cart";
-import { getOrders, type LocalOrder } from "./lib/storage";
-import { useTheme } from "./theme/ThemeProvider";
 import { router, useFocusEffect } from "expo-router";
+import { useCallback, useRef, useState } from "react";
+import { Alert, Animated, Pressable, ScrollView, Text, View } from "react-native";
+import { useCart } from "./lib/cart";
+import { products } from "./lib/data";
+import { getOrders, getSellerProducts, type LocalOrder } from "./lib/storage";
+import { useTheme } from "./theme/ThemeProvider";
 
 export default function OrdersScreen() {
   const { colors } = useTheme();
-  const { addItem } = useCart();
+  const { addItem, clearCart } = useCart();
   const [orders, setOrders] = useState<LocalOrder[]>([]);
+  const [toast, setToast] = useState("");
+  const toastAnim = useRef(new Animated.Value(0)).current;
 
   useFocusEffect(
     useCallback(() => {
@@ -24,6 +27,25 @@ export default function OrdersScreen() {
     }, [])
   );
 
+  function showToast(message: string) {
+    setToast(message);
+    toastAnim.setValue(0);
+
+    Animated.timing(toastAnim, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+
+    setTimeout(() => {
+      Animated.timing(toastAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => setToast(""));
+    }, 1200);
+  }
+
   function statusStyle(status: LocalOrder["status"]) {
     if (status === "Delivered") {
       return { backgroundColor: "#2E7D32" };
@@ -36,12 +58,43 @@ export default function OrdersScreen() {
     return { backgroundColor: "#6D4C41" };
   }
 
-  function orderAgain(order: LocalOrder) {
+  async function reorder(order: LocalOrder, replace: boolean) {
+    const sellerProducts = await getSellerProducts();
+    const allProducts = [...products, ...sellerProducts];
+
+    if (replace) {
+      clearCart();
+    }
+
+    let missing = false;
+
     order.items.forEach((item) => {
+      const found = allProducts.find((p) => p.id === item.id);
+
+      if (!found) {
+        missing = true;
+        return;
+      }
+
       for (let i = 0; i < item.qty; i += 1) {
-        addItem({ id: item.id, name: item.name, price: item.price, unit: item.unit });
+        addItem(found);
       }
     });
+
+    if (missing) {
+      Alert.alert("Some items no longer available");
+    }
+
+    showToast("Added to cart ✅");
+    router.push("/cart");
+  }
+
+  function orderAgain(order: LocalOrder) {
+    Alert.alert("Reorder", "Replace current cart?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Add to existing cart", onPress: () => reorder(order, false) },
+      { text: "Replace", onPress: () => reorder(order, true) },
+    ]);
   }
 
   return (
@@ -118,6 +171,30 @@ export default function OrdersScreen() {
           ))}
         </View>
       </ScrollView>
+
+      {toast ? (
+        <Animated.View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            left: 20,
+            right: 20,
+            bottom: 20,
+            opacity: toastAnim,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: colors.primary,
+              borderRadius: 12,
+              paddingVertical: 10,
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>{toast}</Text>
+          </View>
+        </Animated.View>
+      ) : null}
     </View>
   );
 }
