@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useRef, useState } from "react";
-import { Alert, Animated, Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Animated, FlatList, Pressable, Text, View } from "react-native";
 import { useCart } from "./lib/cart";
 import { products } from "./lib/data";
 import { getOrders, getSellerProducts, type LocalOrder } from "./lib/storage";
@@ -114,103 +114,123 @@ export default function OrdersScreen() {
     ]);
   }
 
-  return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: 30 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <Pressable
-            onPress={() => router.back()}
-            style={({ pressed }) => ({
-              borderWidth: 1,
-              borderColor: colors.border,
-              borderRadius: radius.md,
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              backgroundColor: colors.surface,
-              opacity: pressed ? 0.9 : 1,
-            })}
-          >
-            <Text style={{ fontSize: 14, fontWeight: "800", color: colors.text }}>← Back</Text>
-          </Pressable>
+  function openOrder(orderId: string) {
+    router.push(`/orders/${String(orderId)}`);
+  }
 
-          <Text style={{ fontSize: fontSizes.subtitle + 6, fontWeight: "800", color: colors.text }}>
-            {t("orders")}
-          </Text>
+  function renderOrderCard(order: LocalOrder) {
+    return (
+      <Pressable
+        onPress={() => openOrder(order.id)}
+        style={({ pressed }) => ({
+          borderWidth: 1,
+          borderColor: colors.border,
+          borderRadius: radius.lg,
+          padding: spacing.sm,
+          backgroundColor: colors.surface,
+          opacity: pressed ? 0.95 : 1,
+          ...shadows.card,
+        })}
+      >
+        <Text style={{ color: colors.text, fontWeight: "700" }}>{new Date(order.createdAt).toLocaleString()}</Text>
 
-          <View style={{ width: 64 }} />
+        <View
+          style={{
+            alignSelf: "flex-start",
+            marginTop: 8,
+            borderRadius: 999,
+            paddingHorizontal: 10,
+            paddingVertical: 4,
+            ...statusStyle(order.status),
+          }}
+        >
+          <Text style={{ color: "white", fontWeight: "700", fontSize: 12 }}>{statusLabel(order.status)}</Text>
         </View>
 
-        {!isLoading && orders.length === 0 ? (
-          <View style={{ marginTop: 12, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: spacing.md, backgroundColor: colors.surface, ...shadows.card }}>
-            <Text style={{ color: colors.text, fontWeight: "700" }}>{t("no_orders")}</Text>
-            <Text style={{ marginTop: 4, color: colors.mutedText }}>Your placed orders will appear here.</Text>
-          </View>
-        ) : null}
+        <Text style={{ marginTop: 10, color: colors.text, fontWeight: "800" }}>Total: ₹{order.total}</Text>
 
-        <View style={{ marginTop: 12, gap: 12 }}>
-          {isLoading ? (
-            <>
-              {[1, 2].map((key) => (
-                <View key={`order_skeleton_${key}`} style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 14, padding: 12, backgroundColor: colors.surface }}>
-                  <View style={{ height: 14, borderRadius: 8, backgroundColor: colors.background }} />
-                  <View style={{ marginTop: 8, height: 12, width: "60%", borderRadius: 8, backgroundColor: colors.background }} />
-                  <View style={{ marginTop: 10, height: 36, borderRadius: 10, backgroundColor: colors.background }} />
-                </View>
-              ))}
-            </>
-          ) : null}
-          {orders.map((order) => (
-            <View
-              key={order.id}
-              style={{
-                borderWidth: 1,
-                borderColor: colors.border,
-                borderRadius: radius.lg,
-                padding: spacing.sm,
-                backgroundColor: colors.surface,
-                ...shadows.card,
-              }}
-            >
-              <Text style={{ color: colors.text, fontWeight: "700" }}>
-                {new Date(order.createdAt).toLocaleString()}
-              </Text>
+        <Pressable
+          onPress={(event) => {
+            event.stopPropagation();
+            orderAgain(order);
+          }}
+          style={({ pressed }) => ({
+            marginTop: 10,
+            backgroundColor: colors.primary,
+            borderRadius: 10,
+            paddingVertical: 10,
+            alignItems: "center",
+            opacity: pressed ? 0.9 : 1,
+          })}
+        >
+          <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>Order Again</Text>
+        </Pressable>
+      </Pressable>
+    );
+  }
 
-              <View
-                style={{
-                  alignSelf: "flex-start",
-                  marginTop: 8,
-                  borderRadius: 999,
-                  paddingHorizontal: 10,
-                  paddingVertical: 4,
-                  ...statusStyle(order.status),
-                }}
-              >
-                <Text style={{ color: "white", fontWeight: "700", fontSize: 12 }}>
-                  {statusLabel(order.status)}
-                </Text>
-              </View>
-
-              <Text style={{ marginTop: 10, color: colors.text, fontWeight: "800" }}>
-                Total: ₹{order.total}
-              </Text>
-
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <FlatList
+        data={isLoading ? [] : orders}
+        keyExtractor={(order) => String(order.id)}
+        contentContainerStyle={{ padding: spacing.lg, paddingBottom: 30 }}
+        ListHeaderComponent={
+          <>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <Pressable
-                onPress={() => orderAgain(order)}
+                onPress={() => router.back()}
                 style={({ pressed }) => ({
-                  marginTop: 10,
-                  backgroundColor: colors.primary,
-                  borderRadius: 10,
-                  paddingVertical: 10,
-                  alignItems: "center",
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  borderRadius: radius.md,
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  backgroundColor: colors.surface,
                   opacity: pressed ? 0.9 : 1,
                 })}
               >
-                <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>Order Again</Text>
+                <Text style={{ fontSize: 14, fontWeight: "800", color: colors.text }}>← Back</Text>
               </Pressable>
+
+              <Text style={{ fontSize: fontSizes.subtitle + 6, fontWeight: "800", color: colors.text }}>
+                {t("orders")}
+              </Text>
+
+              <View style={{ width: 64 }} />
             </View>
-          ))}
-        </View>
-      </ScrollView>
+
+            {!isLoading && orders.length === 0 ? (
+              <View style={{ marginTop: 12, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: spacing.md, backgroundColor: colors.surface, ...shadows.card }}>
+                <Text style={{ color: colors.text, fontWeight: "700" }}>{t("no_orders")}</Text>
+                <Text style={{ marginTop: 4, color: colors.mutedText }}>Your placed orders will appear here.</Text>
+              </View>
+            ) : null}
+
+            {isLoading
+              ? [1, 2].map((key) => (
+                  <View
+                    key={`order_skeleton_${key}`}
+                    style={{
+                      marginTop: 12,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      borderRadius: 14,
+                      padding: 12,
+                      backgroundColor: colors.surface,
+                    }}
+                  >
+                    <View style={{ height: 14, borderRadius: 8, backgroundColor: colors.background }} />
+                    <View style={{ marginTop: 8, height: 12, width: "60%", borderRadius: 8, backgroundColor: colors.background }} />
+                    <View style={{ marginTop: 10, height: 36, borderRadius: 10, backgroundColor: colors.background }} />
+                  </View>
+                ))
+              : null}
+          </>
+        }
+        ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+        renderItem={({ item }) => renderOrderCard(item)}
+      />
 
       {toast ? (
         <Animated.View

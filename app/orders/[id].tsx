@@ -8,7 +8,8 @@ import { getOrders, getSellerProducts, type LocalOrder, type OrderStatus, update
 import { useTheme } from "../theme/ThemeProvider";
 
 export default function OrderDetail() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id } = useLocalSearchParams<{ id?: string | string[] }>();
+  const orderId = Array.isArray(id) ? id[0] : id;
   const { colors } = useTheme();
   const { addItem, clearCart } = useCart();
   const [order, setOrder] = useState<LocalOrder | null>(null);
@@ -19,11 +20,16 @@ export default function OrderDetail() {
     useCallback(() => {
       async function loadOrder() {
         const all = await getOrders();
-        setOrder(all.find((o) => o.id === id) ?? null);
+        if (!orderId) {
+          setOrder(null);
+          return;
+        }
+
+        setOrder(all.find((o) => o.id === String(orderId)) ?? null);
       }
 
       loadOrder();
-    }, [id])
+    }, [orderId])
   );
 
   function statusLabel(status: OrderStatus) {
@@ -125,8 +131,23 @@ export default function OrderDetail() {
 
   if (!order) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background }}>
-        <Text style={{ color: colors.text }}>Order not found</Text>
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background, padding: 20 }}>
+        <Text style={{ color: colors.text, fontWeight: "700", fontSize: 18 }}>Order not found</Text>
+        <Pressable
+          onPress={() => router.back()}
+          style={({ pressed }) => ({
+            marginTop: 12,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: 12,
+            paddingHorizontal: 14,
+            paddingVertical: 10,
+            backgroundColor: colors.surface,
+            opacity: pressed ? 0.9 : 1,
+          })}
+        >
+          <Text style={{ color: colors.text, fontWeight: "700" }}>← Back</Text>
+        </Pressable>
       </View>
     );
   }
