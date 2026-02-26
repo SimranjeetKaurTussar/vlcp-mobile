@@ -26,6 +26,18 @@ export default function OrderDetail() {
     }, [id])
   );
 
+  function statusLabel(status: OrderStatus) {
+    if (status === "Delivered") {
+      return "Delivered";
+    }
+
+    if (status === "Accepted") {
+      return "Confirmed";
+    }
+
+    return "Placed";
+  }
+
   function showToast(message: string) {
     setToast(message);
     toastAnim.setValue(0);
@@ -61,7 +73,7 @@ export default function OrderDetail() {
       await Notifications.scheduleNotificationAsync({
         content: {
           title: "VLCP",
-          body: `Order status updated: ${status}`,
+          body: `Order status updated: ${statusLabel(status)}`,
         },
         trigger: null,
       });
@@ -122,19 +134,32 @@ export default function OrderDetail() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 30 }}>
-        <Pressable onPress={() => router.back()}>
-          <Text style={{ color: colors.text, fontWeight: "700" }}>← Back</Text>
-        </Pressable>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <Pressable
+            onPress={() => router.back()}
+            style={({ pressed }) => ({
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderRadius: 12,
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              backgroundColor: colors.surface,
+              opacity: pressed ? 0.9 : 1,
+            })}
+          >
+            <Text style={{ color: colors.text, fontWeight: "700" }}>← Back</Text>
+          </Pressable>
 
-        <Text style={{ marginTop: 12, fontSize: 22, fontWeight: "800", color: colors.text }}>
-          Order Details
-        </Text>
+          <Text style={{ fontSize: 22, fontWeight: "800", color: colors.text }}>Order Details</Text>
+
+          <View style={{ width: 64 }} />
+        </View>
 
         <Text style={{ marginTop: 6, color: colors.mutedText }}>
           {new Date(order.createdAt).toLocaleString()}
         </Text>
 
-        <Text style={{ marginTop: 6, color: colors.mutedText }}>Status: {order.status}</Text>
+        <Text style={{ marginTop: 6, color: colors.mutedText }}>Status: {statusLabel(order.status)}</Text>
 
         <View style={{ marginTop: 10, flexDirection: "row", gap: 8 }}>
           {(["Pending", "Accepted", "Delivered"] as const).map((status) => {
@@ -142,7 +167,7 @@ export default function OrderDetail() {
 
             return (
               <Pressable
-                key={status}
+                key={statusLabel(status)}
                 onPress={() => changeStatus(status)}
                 style={{
                   borderWidth: 1,
@@ -154,7 +179,7 @@ export default function OrderDetail() {
                 }}
               >
                 <Text style={{ color: active ? colors.onPrimary : colors.text, fontWeight: "700" }}>
-                  {status}
+                  {statusLabel(status)}
                 </Text>
               </Pressable>
             );
@@ -194,7 +219,7 @@ export default function OrderDetail() {
             backgroundColor: colors.surface,
           }}
         >
-          <Text style={{ color: colors.text, fontWeight: "800" }}>Total: ₹{order.total}</Text>
+          <Text style={{ color: colors.text, fontWeight: "800" }}>Grand Total: ₹{order.total}</Text>
         </View>
 
         <Pressable

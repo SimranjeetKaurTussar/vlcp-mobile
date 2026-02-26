@@ -51,6 +51,18 @@ export default function OrdersScreen() {
     }, 1200);
   }
 
+  function statusLabel(status: LocalOrder["status"]) {
+    if (status === "Delivered") {
+      return "Delivered";
+    }
+
+    if (status === "Accepted") {
+      return "Confirmed";
+    }
+
+    return "Placed";
+  }
+
   function statusStyle(status: LocalOrder["status"]) {
     if (status === "Delivered") {
       return { backgroundColor: "#2E7D32" };
@@ -105,13 +117,28 @@ export default function OrdersScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: 30 }}>
-        <Pressable onPress={() => router.back()}>
-          <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>← Back</Text>
-        </Pressable>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <Pressable
+            onPress={() => router.back()}
+            style={({ pressed }) => ({
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderRadius: radius.md,
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              backgroundColor: colors.surface,
+              opacity: pressed ? 0.9 : 1,
+            })}
+          >
+            <Text style={{ fontSize: 14, fontWeight: "800", color: colors.text }}>← Back</Text>
+          </Pressable>
 
-        <Text style={{ marginTop: 14, fontSize: fontSizes.subtitle + 6, fontWeight: "800", color: colors.text }}>
-          {t("orders")}
-        </Text>
+          <Text style={{ fontSize: fontSizes.subtitle + 6, fontWeight: "800", color: colors.text }}>
+            {t("orders")}
+          </Text>
+
+          <View style={{ width: 64 }} />
+        </View>
 
         {!isLoading && orders.length === 0 ? (
           <View style={{ marginTop: 12, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: spacing.md, backgroundColor: colors.surface, ...shadows.card }}>
@@ -159,16 +186,8 @@ export default function OrdersScreen() {
                 }}
               >
                 <Text style={{ color: "white", fontWeight: "700", fontSize: 12 }}>
-                  {order.status}
+                  {statusLabel(order.status)}
                 </Text>
-              </View>
-
-              <View style={{ marginTop: 10, gap: 6 }}>
-                {order.items.map((item) => (
-                  <Text key={`${order.id}_${item.id}`} style={{ color: colors.text }}>
-                    {item.name} • Qty {item.qty} • ₹{item.qty * item.price}
-                  </Text>
-                ))}
               </View>
 
               <Text style={{ marginTop: 10, color: colors.text, fontWeight: "800" }}>
