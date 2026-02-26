@@ -1,11 +1,13 @@
-import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
+import { useCart } from "./lib/cart";
 import { getOrders, type LocalOrder } from "./lib/storage";
 import { useTheme } from "./theme/ThemeProvider";
+import { useFocusEffect } from "expo-router";
 
 export default function OrdersScreen() {
   const { colors } = useTheme();
+  const { addItem } = useCart();
   const [orders, setOrders] = useState<LocalOrder[]>([]);
 
   useFocusEffect(
@@ -34,10 +36,20 @@ export default function OrdersScreen() {
     return { backgroundColor: "#6D4C41" };
   }
 
+  function orderAgain(order: LocalOrder) {
+    order.items.forEach((item) => {
+      for (let i = 0; i < item.qty; i += 1) {
+        addItem({ id: item.id, name: item.name, price: item.price, unit: item.unit });
+      }
+    });
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 30 }}>
-        <Text style={{ fontSize: 24, fontWeight: "800", color: colors.text }}>Orders</Text>
+        <Text style={{ fontSize: 24, fontWeight: "800", color: colors.text }}>
+          Orders
+        </Text>
 
         {orders.length === 0 ? (
           <Text style={{ marginTop: 12, color: colors.mutedText }}>No orders yet.</Text>
@@ -45,9 +57,8 @@ export default function OrdersScreen() {
 
         <View style={{ marginTop: 12, gap: 12 }}>
           {orders.map((order) => (
-            <Pressable
+            <View
               key={order.id}
-              onPress={() => router.push(`/orders/${order.id}`)}
               style={{
                 borderWidth: 1,
                 borderColor: colors.border,
@@ -58,10 +69,6 @@ export default function OrdersScreen() {
             >
               <Text style={{ color: colors.text, fontWeight: "700" }}>
                 {new Date(order.createdAt).toLocaleString()}
-              </Text>
-
-              <Text style={{ marginTop: 6, color: colors.text, fontWeight: "800" }}>
-                Total: ₹{order.total}
               </Text>
 
               <View
@@ -78,7 +85,32 @@ export default function OrdersScreen() {
                   {order.status}
                 </Text>
               </View>
-            </Pressable>
+
+              <View style={{ marginTop: 10, gap: 6 }}>
+                {order.items.map((item) => (
+                  <Text key={`${order.id}_${item.id}`} style={{ color: colors.text }}>
+                    {item.name} • Qty {item.qty} • ₹{item.qty * item.price}
+                  </Text>
+                ))}
+              </View>
+
+              <Text style={{ marginTop: 10, color: colors.text, fontWeight: "800" }}>
+                Total: ₹{order.total}
+              </Text>
+
+              <Pressable
+                onPress={() => orderAgain(order)}
+                style={{
+                  marginTop: 10,
+                  backgroundColor: colors.primary,
+                  borderRadius: 10,
+                  paddingVertical: 10,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>Order Again</Text>
+              </Pressable>
+            </View>
           ))}
         </View>
       </ScrollView>
