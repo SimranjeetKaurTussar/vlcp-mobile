@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable, Animated, Alert, Linking, Image } from "react-native";
+import { View, Text, ScrollView, Pressable, Animated, Alert, Linking, Image, Share } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { productImagePlaceholder, products, sellerProfiles } from "../lib/data";
 import { useCart } from "../lib/cart";
@@ -76,12 +76,61 @@ export default function ProductDetail() {
       : [productImagePlaceholder];
 
   const sellerProfile = sellerProfiles[product.seller];
+  const sellerPhone = sellerProfile?.phone?.replace(/\D/g, "") ?? "";
   const canDeliver = userVillage
     ? sellerProfile?.deliversTo.some(
         (village) => village.toLowerCase() === userVillage.trim().toLowerCase()
       )
     : false;
 
+  async function contactSellerOnWhatsApp() {
+    if (!sellerPhone) {
+      Alert.alert("Seller phone missing", "Seller contact is currently unavailable.");
+      return;
+    }
+
+    const message = encodeURIComponent(
+      `Hi ${product.seller}, I'm interested in ${product.name}. Is it available?`
+    );
+    const appUrl = `whatsapp://send?phone=${sellerPhone}&text=${message}`;
+    const webUrl = `https://wa.me/${sellerPhone}?text=${message}`;
+
+    if (await Linking.canOpenURL(appUrl)) {
+      await Linking.openURL(appUrl);
+      return;
+    }
+
+    if (await Linking.canOpenURL(webUrl)) {
+      await Linking.openURL(webUrl);
+      return;
+    }
+
+    Alert.alert("Unable to open WhatsApp", "Please try again later.");
+  }
+
+  async function callSeller() {
+    if (!sellerPhone) {
+      return;
+    }
+
+    const telUrl = `tel:${sellerPhone}`;
+    const canOpen = await Linking.canOpenURL(telUrl);
+
+    if (!canOpen) {
+      Alert.alert("Unable to make call", "Calling is not supported on this device.");
+      return;
+    }
+
+    await Linking.openURL(telUrl);
+  }
+
+  async function shareProductInfo() {
+    const shareText = `Check this on VLCP:
+${product.name}
+Price: ₹${product.price}/${product.unit}
+Seller: ${product.seller}`;
+    await Share.share({ message: shareText, title: product.name });
+  }
 
   async function openWhatsAppOrder() {
     const cleanWhatsAppNumber = whatsappNumber.replace(/\D/g, "");
@@ -197,6 +246,77 @@ Total: ₹${total}`;
           <Text style={{ marginTop: 10, color: colors.mutedText }}>
             Demo description. Later we add photos, delivery info etc.
           </Text>
+        </View>
+
+        <View
+          style={{
+            marginTop: spacing.md,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: radius.lg,
+            padding: spacing.md,
+            backgroundColor: colors.surface,
+            ...shadows.card,
+          }}
+        >
+          <Text style={{ color: colors.text, fontWeight: "800", fontSize: 16 }}>
+            Contact Seller
+          </Text>
+
+          <View style={{ marginTop: spacing.sm, flexDirection: "row", gap: 10 }}>
+            <Pressable
+              onPress={contactSellerOnWhatsApp}
+              style={({ pressed }) => ({
+                flex: 1,
+                backgroundColor: colors.primary,
+                paddingVertical: 12,
+                borderRadius: radius.md,
+                alignItems: "center",
+                opacity: pressed ? 0.9 : 1,
+              })}
+            >
+              <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>WhatsApp</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={callSeller}
+              disabled={!sellerPhone}
+              style={({ pressed }) => ({
+                flex: 1,
+                borderWidth: 1,
+                borderColor: colors.border,
+                paddingVertical: 12,
+                borderRadius: radius.md,
+                alignItems: "center",
+                backgroundColor: colors.surface,
+                opacity: !sellerPhone ? 0.45 : pressed ? 0.9 : 1,
+              })}
+            >
+              <Text style={{ color: colors.text, fontWeight: "800" }}>Call</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={shareProductInfo}
+              style={({ pressed }) => ({
+                flex: 1,
+                borderWidth: 1,
+                borderColor: colors.border,
+                paddingVertical: 12,
+                borderRadius: radius.md,
+                alignItems: "center",
+                backgroundColor: colors.surface,
+                opacity: pressed ? 0.9 : 1,
+              })}
+            >
+              <Text style={{ color: colors.text, fontWeight: "800" }}>Share</Text>
+            </Pressable>
+          </View>
+
+          {!sellerPhone ? (
+            <Text style={{ marginTop: 8, color: colors.mutedText, fontSize: 12 }}>
+              Seller phone not available right now.
+            </Text>
+          ) : null}
         </View>
       </ScrollView>
 
