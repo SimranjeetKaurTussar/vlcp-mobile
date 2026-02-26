@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,8 +9,9 @@ import {
 } from "react-native";
 import { categories, products } from "../lib/data";
 import { useCart } from "../lib/cart";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useTheme } from "../theme/ThemeProvider";
+import { getSellerProducts, type SellerProduct } from "../lib/storage";
 
 export default function Home() {
   const { items, addItem, decItem } = useCart();
@@ -18,6 +19,7 @@ export default function Home() {
 
   const [query, setQuery] = useState("");
   const [activeCat, setActiveCat] = useState<string>("All");
+  const [sellerProducts, setSellerProducts] = useState<SellerProduct[]>([]);
 
   const [toast, setToast] = useState<string>("");
   const toastAnim = useRef(new Animated.Value(0)).current;
@@ -41,9 +43,21 @@ export default function Home() {
     }, 1200);
   }
 
+
+  useFocusEffect(
+    useCallback(() => {
+      async function loadSellerProducts() {
+        const stored = await getSellerProducts();
+        setSellerProducts(stored);
+      }
+
+      loadSellerProducts();
+    }, [])
+  );
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return products.filter((p) => {
+    return [...products, ...sellerProducts].filter((p) => {
       const matchesQuery =
         q.length === 0 ||
         p.name.toLowerCase().includes(q) ||
@@ -52,7 +66,7 @@ export default function Home() {
       const matchesCat = activeCat === "All" || p.category === activeCat;
       return matchesQuery && matchesCat;
     });
-  }, [query, activeCat]);
+  }, [query, activeCat, sellerProducts]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>

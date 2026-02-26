@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { Alert, Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { useCart } from "../lib/cart";
+import { saveOrder, type LocalOrder } from "../lib/storage";
 import { businessName, whatsappNumber } from "../lib/config";
 import { useTheme } from "../theme/ThemeProvider";
 
@@ -17,6 +18,22 @@ export default function Cart() {
       Alert.alert("Cart is empty", "Please add items before checkout.");
       return;
     }
+
+    const order: LocalOrder = {
+      id: `o_${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      items: items.map((item) => ({
+        id: item.id,
+        name: item.name,
+        qty: item.qty,
+        price: item.price,
+        unit: item.unit,
+      })),
+      total: grandTotal,
+      status: "Placed",
+    };
+
+    await saveOrder(order);
 
     const lines = items.map((item) => {
       const amount = item.price * item.qty;

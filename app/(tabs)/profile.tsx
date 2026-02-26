@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { router } from "expo-router";
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useTheme } from "../theme/ThemeProvider";
 import {
@@ -73,6 +74,22 @@ export default function Profile() {
           );
         })}
       </View>
+
+
+      <Pressable
+        onPress={() => router.push("/orders")}
+        style={{
+          marginTop: 16,
+          borderWidth: 1,
+          borderColor: colors.border,
+          paddingVertical: 12,
+          borderRadius: 12,
+          alignItems: "center",
+          backgroundColor: colors.surface,
+        }}
+      >
+        <Text style={{ color: colors.text, fontWeight: "700" }}>View Orders</Text>
+      </Pressable>
 
       <Text style={{ marginTop: 28, color: colors.mutedText, fontWeight: "600" }}>
         Business Settings
