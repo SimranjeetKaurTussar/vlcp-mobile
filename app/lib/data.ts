@@ -41,3 +41,10 @@ export const products = [
     category: "Pickles",
   },
 ];
+
+export const sellerProfiles: Record<string, { village: string; phone: string }> = {
+  "Village Dairy": { village: "Rampur", phone: "919812340001" },
+  "Kisan Group": { village: "Shivpura", phone: "919812340002" },
+  "Farm Fresh": { village: "Devgaon", phone: "919812340003" },
+  "Home Kitchen": { village: "Lakshmipur", phone: "919812340004" },
+};
