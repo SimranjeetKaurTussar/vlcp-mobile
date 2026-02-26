@@ -1,8 +1,9 @@
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
+import * as Notifications from "expo-notifications";
 import { useCart } from "../lib/cart";
-import { getOrders, type LocalOrder } from "../lib/storage";
+import { getOrders, type LocalOrder, type OrderStatus, updateOrderStatus } from "../lib/storage";
 import { useTheme } from "../theme/ThemeProvider";
 
 export default function OrderDetail() {
@@ -11,14 +12,39 @@ export default function OrderDetail() {
   const { addItem } = useCart();
   const [order, setOrder] = useState<LocalOrder | null>(null);
 
-  useEffect(() => {
-    async function loadOrder() {
-      const all = await getOrders();
-      setOrder(all.find((o) => o.id === id) ?? null);
+  useFocusEffect(
+    useCallback(() => {
+      async function loadOrder() {
+        const all = await getOrders();
+        setOrder(all.find((o) => o.id === id) ?? null);
+      }
+
+      loadOrder();
+    }, [id])
+  );
+
+  async function changeStatus(status: OrderStatus) {
+    if (!order) {
+      return;
     }
 
-    loadOrder();
-  }, [id]);
+    await updateOrderStatus(order.id, status);
+
+    const all = await getOrders();
+    const next = all.find((o) => o.id === order.id) ?? null;
+    setOrder(next);
+
+    const permissions = await Notifications.requestPermissionsAsync();
+    if (permissions.status === "granted") {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "VLCP",
+          body: `Order status updated: ${status}`,
+        },
+        trigger: null,
+      });
+    }
+  }
 
   function handleReorder() {
     if (!order) {
@@ -58,6 +84,31 @@ export default function OrderDetail() {
         </Text>
 
         <Text style={{ marginTop: 6, color: colors.mutedText }}>Status: {order.status}</Text>
+
+        <View style={{ marginTop: 10, flexDirection: "row", gap: 8 }}>
+          {(["Pending", "Accepted", "Delivered"] as const).map((status) => {
+            const active = order.status === status;
+
+            return (
+              <Pressable
+                key={status}
+                onPress={() => changeStatus(status)}
+                style={{
+                  borderWidth: 1,
+                  borderColor: active ? colors.primary : colors.border,
+                  backgroundColor: active ? colors.primary : colors.surface,
+                  borderRadius: 999,
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                }}
+              >
+                <Text style={{ color: active ? colors.onPrimary : colors.text, fontWeight: "700" }}>
+                  {status}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
 
         <View style={{ marginTop: 14, gap: 10 }}>
           {order.items.map((item) => (

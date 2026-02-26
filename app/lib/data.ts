@@ -59,9 +59,28 @@ export const products = [
 export const productImagePlaceholder =
   "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=1200&q=60";
 
-export const sellerProfiles: Record<string, { village: string; phone: string }> = {
-  "Village Dairy": { village: "Rampur", phone: "919812340001" },
-  "Kisan Group": { village: "Shivpura", phone: "919812340002" },
-  "Farm Fresh": { village: "Devgaon", phone: "919812340003" },
-  "Home Kitchen": { village: "Lakshmipur", phone: "919812340004" },
+export const sellerProfiles: Record<
+  string,
+  { village: string; phone: string; deliversTo: string[] }
+> = {
+  "Village Dairy": {
+    village: "Rampur",
+    phone: "919812340001",
+    deliversTo: ["Rampur", "Devgaon"],
+  },
+  "Kisan Group": {
+    village: "Shivpura",
+    phone: "919812340002",
+    deliversTo: ["Shivpura", "Lakshmipur"],
+  },
+  "Farm Fresh": {
+    village: "Devgaon",
+    phone: "919812340003",
+    deliversTo: ["Devgaon", "Rampur"],
+  },
+  "Home Kitchen": {
+    village: "Lakshmipur",
+    phone: "919812340004",
+    deliversTo: ["Lakshmipur"],
+  },
 };

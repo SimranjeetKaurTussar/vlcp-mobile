@@ -13,7 +13,7 @@ export type SellerProduct = {
   images?: string[];
 };
 
-export type OrderStatus = "Placed" | "Confirmed" | "Delivered";
+export type OrderStatus = "Pending" | "Accepted" | "Delivered";
 
 export type LocalOrderItem = {
   id: string;
@@ -34,6 +34,7 @@ export type LocalOrder = {
 const THEME_MODE_KEY = "vlcp:themeMode";
 const BUSINESS_NAME_KEY = "vlcp:businessName";
 const WHATSAPP_NUMBER_KEY = "vlcp:whatsappNumber";
+const USER_ADDRESS_KEY = "vlcp:userAddress";
 export const SELLER_PRODUCTS_KEY = "seller_products";
 export const ORDERS_KEY = "orders_history";
 
@@ -65,6 +66,14 @@ export async function getStoredWhatsAppNumber() {
 
 export async function setStoredWhatsAppNumber(number: string) {
   await AsyncStorage.setItem(WHATSAPP_NUMBER_KEY, number);
+}
+
+export async function getStoredAddress() {
+  return (await AsyncStorage.getItem(USER_ADDRESS_KEY)) ?? "";
+}
+
+export async function setStoredAddress(address: string) {
+  await AsyncStorage.setItem(USER_ADDRESS_KEY, address.trim());
 }
 
 export async function getSellerProducts(): Promise<SellerProduct[]> {
@@ -104,4 +113,13 @@ export async function getOrders(): Promise<LocalOrder[]> {
 export async function saveOrder(order: LocalOrder) {
   const existing = await getOrders();
   await AsyncStorage.setItem(ORDERS_KEY, JSON.stringify([order, ...existing]));
+}
+
+export async function updateOrderStatus(id: string, status: OrderStatus) {
+  const existing = await getOrders();
+  const updated = existing.map((order) =>
+    order.id === id ? { ...order, status } : order
+  );
+
+  await AsyncStorage.setItem(ORDERS_KEY, JSON.stringify(updated));
 }

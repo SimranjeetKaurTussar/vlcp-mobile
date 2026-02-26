@@ -9,17 +9,20 @@ import {
   updateWhatsAppNumber,
   whatsappNumber,
 } from "../lib/config";
+import { getStoredAddress, setStoredAddress } from "../lib/storage";
 
 export default function Profile() {
   const { mode, setMode, colors } = useTheme();
   const [name, setName] = useState(businessName);
   const [number, setNumber] = useState(whatsappNumber);
+  const [address, setAddress] = useState("");
 
   useEffect(() => {
     async function hydrateBusinessSettings() {
       await loadBusinessConfig();
       setName(businessName);
       setNumber(whatsappNumber);
+      setAddress(await getStoredAddress());
     }
 
     hydrateBusinessSettings();
@@ -30,14 +33,19 @@ export default function Profile() {
 
     await updateBusinessName(name);
     await updateWhatsAppNumber(cleanNumber);
+    await setStoredAddress(address);
 
     setName(name.trim() || "VLCP");
     setNumber(cleanNumber);
-    Alert.alert("Saved", "Business settings updated.");
+    setAddress(address.trim());
+    Alert.alert("Saved", "Profile and business settings updated.");
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+    >
       <Text style={{ fontSize: 20, fontWeight: "700", color: colors.text }}>Profile</Text>
 
       <Text style={{ marginTop: 24, color: colors.mutedText, fontWeight: "600" }}>
@@ -75,7 +83,6 @@ export default function Profile() {
         })}
       </View>
 
-
       <Pressable
         onPress={() => router.push("/orders")}
         style={{
@@ -90,6 +97,28 @@ export default function Profile() {
       >
         <Text style={{ color: colors.text, fontWeight: "700" }}>View Orders</Text>
       </Pressable>
+
+      <Text style={{ marginTop: 28, color: colors.mutedText, fontWeight: "600" }}>
+        Delivery Address
+      </Text>
+
+      <Text style={{ marginTop: 12, color: colors.text, fontWeight: "600" }}>
+        Village / Address
+      </Text>
+      <TextInput
+        value={address}
+        onChangeText={setAddress}
+        placeholder="e.g. Rampur"
+        style={{
+          marginTop: 8,
+          borderWidth: 1,
+          borderColor: colors.border,
+          borderRadius: 12,
+          padding: 12,
+          backgroundColor: colors.surface,
+          color: colors.text,
+        }}
+      />
 
       <Text style={{ marginTop: 28, color: colors.mutedText, fontWeight: "600" }}>
         Business Settings

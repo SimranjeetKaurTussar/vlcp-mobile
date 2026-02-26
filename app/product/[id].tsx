@@ -1,10 +1,11 @@
 import { View, Text, ScrollView, Pressable, Animated, Alert, Linking, Image } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { productImagePlaceholder, products } from "../lib/data";
+import { productImagePlaceholder, products, sellerProfiles } from "../lib/data";
 import { useCart } from "../lib/cart";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTheme } from "../theme/ThemeProvider";
 import { businessName, whatsappNumber } from "../lib/config";
+import { getStoredAddress } from "../lib/storage";
 
 export default function ProductDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -13,6 +14,7 @@ export default function ProductDetail() {
 
   const [toast, setToast] = useState("");
   const toastAnim = useRef(new Animated.Value(0)).current;
+  const [userVillage, setUserVillage] = useState("");
 
   function showToast(message: string) {
     setToast(message);
@@ -32,6 +34,16 @@ export default function ProductDetail() {
       }).start(() => setToast(""));
     }, 1200);
   }
+
+
+  useEffect(() => {
+    async function loadAddress() {
+      const address = await getStoredAddress();
+      setUserVillage(address);
+    }
+
+    loadAddress();
+  }, []);
 
   const product = products.find((p) => p.id === id);
 
@@ -60,6 +72,14 @@ export default function ProductDetail() {
     product.images && product.images.length > 0
       ? product.images
       : [productImagePlaceholder];
+
+  const sellerProfile = sellerProfiles[product.seller];
+  const canDeliver = userVillage
+    ? sellerProfile?.deliversTo.some(
+        (village) => village.toLowerCase() === userVillage.trim().toLowerCase()
+      )
+    : false;
+
 
   async function openWhatsAppOrder() {
     if (qty === 0) {
@@ -121,6 +141,14 @@ Total: ₹${total}`;
             Seller: {product.seller} • {product.category}
           </Text>
         </Pressable>
+
+        <Text style={{ marginTop: 6, color: canDeliver ? colors.primary : colors.mutedText, fontWeight: "700" }}>
+          {userVillage
+            ? canDeliver
+              ? "Delivery available"
+              : "Pickup only"
+            : "Add your village in Profile to check delivery"}
+        </Text>
 
         <ScrollView
           horizontal

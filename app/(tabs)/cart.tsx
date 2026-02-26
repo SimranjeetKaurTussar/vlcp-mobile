@@ -1,5 +1,6 @@
 import { router } from "expo-router";
 import { Alert, Linking, Pressable, ScrollView, Text, View } from "react-native";
+import * as Notifications from "expo-notifications";
 import { useCart } from "../lib/cart";
 import { saveOrder, type LocalOrder } from "../lib/storage";
 import { businessName, whatsappNumber } from "../lib/config";
@@ -30,10 +31,21 @@ export default function Cart() {
         unit: item.unit,
       })),
       total: grandTotal,
-      status: "Placed",
+      status: "Pending",
     };
 
     await saveOrder(order);
+
+    const permissions = await Notifications.requestPermissionsAsync();
+    if (permissions.status === "granted") {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "VLCP",
+          body: "Order sent to seller",
+        },
+        trigger: null,
+      });
+    }
 
     const lines = items.map((item) => {
       const amount = item.price * item.qty;

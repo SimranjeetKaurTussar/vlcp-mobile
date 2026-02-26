@@ -29,7 +29,7 @@ export default function OrdersScreen() {
       return { backgroundColor: "#2E7D32" };
     }
 
-    if (status === "Confirmed") {
+    if (status === "Accepted") {
       return { backgroundColor: "#1565C0" };
     }
 
