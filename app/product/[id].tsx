@@ -1,15 +1,22 @@
-import { View, Text, ScrollView, Pressable, Animated } from "react-native";
+import { View, Text, ScrollView, Pressable, Animated, Alert, Linking, Image } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { products } from "../lib/data";
+import { productImagePlaceholder, products, sellerProfiles } from "../lib/data";
 import { useCart } from "../lib/cart";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useTheme } from "../theme/ThemeProvider";
+import { businessName, whatsappNumber } from "../lib/config";
+import { getStoredAddress } from "../lib/storage";
+import { useT } from "../i18n/useT";
 
 export default function ProductDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { addItem, decItem, items } = useCart();
+  const { colors, spacing, radius, fontSizes, shadows } = useTheme();
+  const { t } = useT();
 
   const [toast, setToast] = useState("");
   const toastAnim = useRef(new Animated.Value(0)).current;
+  const [userVillage, setUserVillage] = useState("");
 
   function showToast(message: string) {
     setToast(message);
@@ -30,12 +37,29 @@ export default function ProductDetail() {
     }, 1200);
   }
 
+
+  useEffect(() => {
+    async function loadAddress() {
+      const address = await getStoredAddress();
+      setUserVillage(address);
+    }
+
+    loadAddress();
+  }, []);
+
   const product = products.find((p) => p.id === id);
 
   if (!product) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ fontSize: 18, fontWeight: "800" }}>
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: colors.background,
+        }}
+      >
+        <Text style={{ fontSize: 18, fontWeight: "800", color: colors.text }}>
           Product not found
         </Text>
       </View>
@@ -46,35 +70,131 @@ export default function ProductDetail() {
   const cartItem = items.find((i) => i.id === product.id);
   const qty = cartItem?.qty ?? 0;
 
+  const productImages =
+    product.images && product.images.length > 0
+      ? product.images
+      : [productImagePlaceholder];
+
+  const sellerProfile = sellerProfiles[product.seller];
+  const canDeliver = userVillage
+    ? sellerProfile?.deliversTo.some(
+        (village) => village.toLowerCase() === userVillage.trim().toLowerCase()
+      )
+    : false;
+
+
+  async function openWhatsAppOrder() {
+    const cleanWhatsAppNumber = whatsappNumber.replace(/\D/g, "");
+
+    if (!cleanWhatsAppNumber || cleanWhatsAppNumber.includes("X")) {
+      Alert.alert("WhatsApp number missing", "Please set a valid WhatsApp number in Profile settings.");
+      return;
+    }
+    if (qty === 0) {
+      showToast("Add quantity first");
+      return;
+    }
+
+    const total = qty * product.price;
+    const message = `Hi ${businessName}, I want to order:
+Product: ${product.name}
+Qty: ${qty}
+Price: ₹${product.price}/${product.unit}
+Total: ₹${total}`;
+    const encoded = encodeURIComponent(message);
+
+    const appUrl = `whatsapp://send?phone=${cleanWhatsAppNumber}&text=${encoded}`;
+    const webUrl = `https://wa.me/${cleanWhatsAppNumber}?text=${encoded}`;
+
+    const hasWhatsApp = await Linking.canOpenURL(appUrl);
+
+    if (hasWhatsApp) {
+      await Linking.openURL(appUrl);
+      return;
+    }
+
+    const canOpenWeb = await Linking.canOpenURL(webUrl);
+
+    if (canOpenWeb) {
+      Alert.alert(
+        "WhatsApp not installed",
+        "No worries — opening WhatsApp web checkout in your browser."
+      );
+      await Linking.openURL(webUrl);
+      return;
+    }
+
+    Alert.alert(
+      "Unable to open WhatsApp",
+      "Please install WhatsApp and try again."
+    );
+  }
+
   return (
-    <View style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 160 }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: 160 }}>
         <Pressable onPress={() => router.back()}>
-          <Text style={{ fontSize: 16, fontWeight: "800" }}>← Back</Text>
+          <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>← Back</Text>
         </Pressable>
 
-        <Text style={{ marginTop: 14, fontSize: 26, fontWeight: "900" }}>
+        <Text style={{ marginTop: 14, fontSize: fontSizes.title, fontWeight: "900", color: colors.text }}>
           {product.name}
         </Text>
 
-        <Text style={{ marginTop: 6, opacity: 0.7 }}>
-          Seller: {product.seller} • {product.category}
+        <Pressable
+          onPress={() => router.push(`/seller/${encodeURIComponent(product.seller)}`)}
+          style={{ marginTop: 6 }}
+        >
+          <Text style={{ color: colors.primary, fontWeight: "700" }}>
+            Seller: {product.seller} • {product.category}
+          </Text>
+        </Pressable>
+
+        <Text style={{ marginTop: 6, color: canDeliver ? colors.primary : colors.mutedText, fontWeight: "700" }}>
+          {userVillage
+            ? canDeliver
+              ? "Delivery available"
+              : "Pickup only"
+            : "Add your village in Profile to check delivery"}
         </Text>
+
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          style={{ marginTop: 18 }}
+        >
+          {productImages.map((image, index) => (
+            <Image
+              key={`${product.id}_${index}`}
+              source={{ uri: image }}
+              style={{
+                width: 300,
+                height: 200,
+                borderRadius: radius.md,
+                marginRight: 10,
+                backgroundColor: colors.surface,
+              }}
+              resizeMode="cover"
+            />
+          ))}
+        </ScrollView>
 
         <View
           style={{
-            marginTop: 18,
+            marginTop: 14,
             borderWidth: 1,
-            borderColor: "#eee",
-            borderRadius: 16,
-            padding: 14,
-            backgroundColor: "white",
+            borderColor: colors.border,
+            borderRadius: radius.lg,
+            padding: spacing.md,
+            backgroundColor: colors.surface,
+            ...shadows.card,
           }}
         >
-          <Text style={{ fontSize: 18, fontWeight: "900" }}>
+          <Text style={{ fontSize: 18, fontWeight: "900", color: colors.text }}>
             ₹{product.price} / {product.unit}
           </Text>
-          <Text style={{ marginTop: 10, opacity: 0.75 }}>
+          <Text style={{ marginTop: 10, color: colors.mutedText }}>
             Demo description. Later we add photos, delivery info etc.
           </Text>
         </View>
@@ -87,10 +207,10 @@ export default function ProductDetail() {
           left: 0,
           right: 0,
           bottom: 0,
-          padding: 16,
+          padding: spacing.md,
           borderTopWidth: 1,
-          borderTopColor: "#eee",
-          backgroundColor: "white",
+          borderTopColor: colors.border,
+          backgroundColor: colors.surface,
         }}
       >
         {/* Qty Row */}
@@ -102,23 +222,23 @@ export default function ProductDetail() {
             marginBottom: 12,
           }}
         >
-          <Text style={{ fontSize: 16, fontWeight: "900" }}>Quantity</Text>
+          <Text style={{ fontSize: 16, fontWeight: "900", color: colors.text }}>{t("quantity")}</Text>
 
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <Pressable
               onPress={() => qty > 0 && decItem(product.id)}
               style={{
-                backgroundColor: "black",
+                backgroundColor: colors.primary,
                 paddingHorizontal: 14,
                 paddingVertical: 8,
                 borderRadius: 12,
                 opacity: qty > 0 ? 1 : 0.4,
               }}
             >
-              <Text style={{ color: "white", fontWeight: "900" }}>−</Text>
+              <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>−</Text>
             </Pressable>
 
-            <Text style={{ fontSize: 16, fontWeight: "900" }}>{qty}</Text>
+            <Text style={{ fontSize: 16, fontWeight: "900", color: colors.text }}>{qty}</Text>
 
             <Pressable
               onPress={() => {
@@ -126,13 +246,13 @@ export default function ProductDetail() {
                 showToast("Added ✅");
               }}
               style={{
-                backgroundColor: "black",
+                backgroundColor: colors.primary,
                 paddingHorizontal: 14,
                 paddingVertical: 8,
                 borderRadius: 12,
               }}
             >
-              <Text style={{ color: "white", fontWeight: "900" }}>+</Text>
+              <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>+</Text>
             </Pressable>
           </View>
         </View>
@@ -148,30 +268,33 @@ export default function ProductDetail() {
                 router.push("/cart");
               }
             }}
-            style={{
+            style={({ pressed }) => ({
               flex: 1,
-              backgroundColor: "black",
+              backgroundColor: colors.primary,
               paddingVertical: 14,
-              borderRadius: 14,
+              borderRadius: radius.md,
               alignItems: "center",
-            }}
+              opacity: pressed ? 0.9 : 1,
+            })}
           >
-            <Text style={{ color: "white", fontWeight: "900" }}>
-              {qty === 0 ? "Add to Cart" : `Go to Cart (${qty})`}
+            <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>
+              {qty === 0 ? t("add_to_cart") : `${t("go_to_cart")} (${qty})`}
             </Text>
           </Pressable>
 
           <Pressable
-            style={{
+            onPress={openWhatsAppOrder}
+            style={({ pressed }) => ({
               flex: 1,
               borderWidth: 1,
-              borderColor: "#ddd",
+              borderColor: colors.border,
               paddingVertical: 14,
-              borderRadius: 14,
+              borderRadius: radius.md,
               alignItems: "center",
-            }}
+              opacity: pressed ? 0.9 : 1,
+            })}
           >
-            <Text style={{ fontWeight: "900" }}>Buy</Text>
+            <Text style={{ fontWeight: "900", color: colors.text }}>{t("buy")}</Text>
           </Pressable>
         </View>
       </View>
@@ -198,14 +321,14 @@ export default function ProductDetail() {
         >
           <View
             style={{
-              backgroundColor: "black",
+              backgroundColor: colors.primary,
               paddingVertical: 12,
               paddingHorizontal: 14,
-              borderRadius: 14,
+              borderRadius: radius.md,
               alignItems: "center",
             }}
           >
-            <Text style={{ color: "white", fontWeight: "800" }}>
+            <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>
               {toast}
             </Text>
           </View>
