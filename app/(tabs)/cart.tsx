@@ -1,5 +1,12 @@
 import { router } from "expo-router";
-import { Alert, Linking, Pressable, ScrollView, Text, View } from "react-native";
+import {
+  Alert,
+  Linking,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { useCart } from "../lib/cart";
 import { businessName, whatsappNumber } from "../lib/config";
 import { useTheme } from "../theme/ThemeProvider";
@@ -24,7 +31,7 @@ export default function Cart() {
     });
 
     const message = `Hi ${businessName}, I want to order:\n${lines.join(
-      "\n"
+      "\n",
     )}\n\nSubtotal: ₹${subtotal}\nDelivery: ₹${deliveryFee}\nGrand Total: ₹${grandTotal}`;
     const encoded = encodeURIComponent(message);
 
@@ -41,13 +48,16 @@ export default function Cart() {
     if (canOpenWeb) {
       Alert.alert(
         "WhatsApp not installed",
-        "No worries — opening WhatsApp web checkout in your browser."
+        "No worries — opening WhatsApp web checkout in your browser.",
       );
       await Linking.openURL(webUrl);
       return;
     }
 
-    Alert.alert("Unable to open WhatsApp", "Please install WhatsApp and try again.");
+    Alert.alert(
+      "Unable to open WhatsApp",
+      "Please install WhatsApp and try again.",
+    );
   }
 
   if (items.length === 0) {
@@ -78,7 +88,9 @@ export default function Cart() {
             borderRadius: 12,
           }}
         >
-          <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>Go to Home</Text>
+          <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>
+            Go to Home
+          </Text>
         </Pressable>
       </View>
     );
@@ -87,7 +99,9 @@ export default function Cart() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 220 }}>
-        <Text style={{ fontSize: 24, fontWeight: "800", color: colors.text }}>Your Cart</Text>
+        <Text style={{ fontSize: 24, fontWeight: "800", color: colors.text }}>
+          Your Cart
+        </Text>
 
         {items.map((item) => {
           const lineTotal = item.price * item.qty;
@@ -104,10 +118,8 @@ export default function Cart() {
                 backgroundColor: colors.surface,
               }}
             >
-              <Text style={{ fontWeight: "800", color: colors.text }}>{item.name}</Text>
-
-              <Text style={{ marginTop: 4, color: colors.mutedText, fontSize: 13 }}>
-                {item.seller} • {item.category}
+              <Text style={{ fontWeight: "800", color: colors.text }}>
+                {item.name}
               </Text>
 
               <Text style={{ marginTop: 4, color: colors.text }}>
@@ -122,7 +134,13 @@ export default function Cart() {
                   justifyContent: "space-between",
                 }}
               >
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 10,
+                  }}
+                >
                   <Pressable
                     onPress={() => decItem(item.id)}
                     style={{
@@ -132,10 +150,20 @@ export default function Cart() {
                       borderRadius: 10,
                     }}
                   >
-                    <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>-</Text>
+                    <Text
+                      style={{ color: colors.onPrimary, fontWeight: "800" }}
+                    >
+                      -
+                    </Text>
                   </Pressable>
 
-                  <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "800",
+                      color: colors.text,
+                    }}
+                  >
                     {item.qty}
                   </Text>
 
@@ -148,7 +176,11 @@ export default function Cart() {
                       borderRadius: 10,
                     }}
                   >
-                    <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>+</Text>
+                    <Text
+                      style={{ color: colors.onPrimary, fontWeight: "800" }}
+                    >
+                      +
+                    </Text>
                   </Pressable>
                 </View>
 
@@ -171,14 +203,22 @@ export default function Cart() {
             gap: 8,
           }}
         >
-          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+          <View
+            style={{ flexDirection: "row", justifyContent: "space-between" }}
+          >
             <Text style={{ color: colors.mutedText }}>Subtotal</Text>
-            <Text style={{ color: colors.text, fontWeight: "700" }}>₹{subtotal}</Text>
+            <Text style={{ color: colors.text, fontWeight: "700" }}>
+              ₹{subtotal}
+            </Text>
           </View>
 
-          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+          <View
+            style={{ flexDirection: "row", justifyContent: "space-between" }}
+          >
             <Text style={{ color: colors.mutedText }}>Delivery fee</Text>
-            <Text style={{ color: colors.text, fontWeight: "700" }}>₹{deliveryFee}</Text>
+            <Text style={{ color: colors.text, fontWeight: "700" }}>
+              ₹{deliveryFee}
+            </Text>
           </View>
 
           <View
@@ -190,8 +230,12 @@ export default function Cart() {
               paddingTop: 8,
             }}
           >
-            <Text style={{ color: colors.text, fontWeight: "900" }}>Grand total</Text>
-            <Text style={{ color: colors.text, fontWeight: "900" }}>₹{grandTotal}</Text>
+            <Text style={{ color: colors.text, fontWeight: "900" }}>
+              Grand total
+            </Text>
+            <Text style={{ color: colors.text, fontWeight: "900" }}>
+              ₹{grandTotal}
+            </Text>
           </View>
         </View>
       </ScrollView>
@@ -211,7 +255,14 @@ export default function Cart() {
         }}
       >
         <Text style={{ color: colors.mutedText }}>Total amount</Text>
-        <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900", marginTop: 2 }}>
+        <Text
+          style={{
+            color: colors.text,
+            fontSize: 20,
+            fontWeight: "900",
+            marginTop: 2,
+          }}
+        >
           ₹{grandTotal}
         </Text>
 
