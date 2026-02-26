@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import {
   Alert,
+  Animated,
   Image,
   Linking,
   Modal,
@@ -10,7 +11,7 @@ import {
   View,
 } from "react-native";
 import * as Notifications from "expo-notifications";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "../lib/cart";
 import { saveOrder, type LocalOrder } from "../lib/storage";
 import { businessName, upiId, whatsappNumber } from "../lib/config";
@@ -18,7 +19,7 @@ import { useTheme } from "../theme/ThemeProvider";
 import { useT } from "../i18n/useT";
 
 export default function Cart() {
-  const { items, addItem, decItem } = useCart();
+  const { items, addItem, decItem, clearCart } = useCart();
   const { colors, spacing, radius, fontSizes, shadows } = useTheme();
   const { t } = useT();
   const [showUpiModal, setShowUpiModal] = useState(false);
@@ -27,12 +28,27 @@ export default function Cart() {
   const deliveryFee = 0;
   const grandTotal = subtotal + deliveryFee;
 
+  const totalPulseAnim = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    Animated.sequence([
+      Animated.timing(totalPulseAnim, { toValue: 1.08, duration: 120, useNativeDriver: true }),
+      Animated.timing(totalPulseAnim, { toValue: 1, duration: 140, useNativeDriver: true }),
+    ]).start();
+  }, [grandTotal, totalPulseAnim]);
+
   const upiPaymentUrl = useMemo(() => {
     const amount = grandTotal.toFixed(2);
     return `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(
       businessName
     )}&am=${encodeURIComponent(amount)}&cu=INR`;
   }, [grandTotal]);
+
+  function confirmClearCart() {
+    Alert.alert("Clear cart", "Remove all items from cart?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Clear", style: "destructive", onPress: clearCart },
+    ]);
+  }
 
   async function checkoutOnWhatsApp() {
     const cleanWhatsAppNumber = whatsappNumber.replace(/\D/g, "");
@@ -113,7 +129,9 @@ export default function Cart() {
   if (items.length === 0) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.lg, backgroundColor: colors.background }}>
-        <Text style={{ fontSize: fontSizes.subtitle + 2, fontWeight: "800", color: colors.text }}>{t("cart_empty")} 🛒</Text>
+        <Text style={{ fontSize: fontSizes.subtitle + 2, fontWeight: "800", color: colors.text }}>
+          {t("cart_empty")} 🛒
+        </Text>
         <View style={{ marginTop: spacing.sm, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: spacing.md, backgroundColor: colors.surface, alignSelf: "stretch", ...shadows.card }}>
           <Text style={{ color: colors.mutedText, textAlign: "center" }}>Add items from Home or Product pages.</Text>
         </View>
@@ -129,8 +147,16 @@ export default function Cart() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: 220 }}>
-        <Text style={{ fontSize: fontSizes.subtitle + 4, fontWeight: "800", color: colors.text }}>Your Cart</Text>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: 240 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <Text style={{ fontSize: fontSizes.subtitle + 4, fontWeight: "800", color: colors.text }}>Your Cart</Text>
+          <Pressable
+            onPress={confirmClearCart}
+            style={({ pressed }) => ({ borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: colors.surface, opacity: pressed ? 0.9 : 1 })}
+          >
+            <Text style={{ color: colors.text, fontWeight: "700" }}>Clear cart</Text>
+          </Pressable>
+        </View>
 
         {items.map((item) => (
           <View key={item.id} style={{ marginTop: spacing.md, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: spacing.sm, backgroundColor: colors.surface, ...shadows.card }}>
@@ -152,34 +178,32 @@ export default function Cart() {
             </View>
           </View>
         ))}
-
-        <View style={{ marginTop: spacing.lg, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: spacing.sm, backgroundColor: colors.surface, ...shadows.card, gap: 8 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <Text style={{ color: colors.mutedText }}>Subtotal</Text>
-            <Text style={{ color: colors.text, fontWeight: "700" }}>₹{subtotal}</Text>
-          </View>
-          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <Text style={{ color: colors.mutedText }}>Delivery fee</Text>
-            <Text style={{ color: colors.text, fontWeight: "700" }}>₹{deliveryFee}</Text>
-          </View>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 8 }}>
-            <Text style={{ color: colors.text, fontWeight: "900" }}>Grand total</Text>
-            <Text style={{ color: colors.text, fontWeight: "900" }}>₹{grandTotal}</Text>
-          </View>
-        </View>
       </ScrollView>
 
-      <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.lg }}>
+      <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.lg, ...shadows.raised }}>
         <Text style={{ color: colors.mutedText }}>Total amount</Text>
-        <Text style={{ color: colors.text, fontSize: fontSizes.subtitle + 2, fontWeight: "900", marginTop: 2 }}>₹{grandTotal}</Text>
-
-        <Pressable onPress={() => setShowUpiModal(true)} style={({ pressed }) => ({ marginTop: spacing.sm, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, paddingVertical: 14, borderRadius: radius.md, alignItems: "center", opacity: pressed ? 0.9 : 1 })}>
-          <Text style={{ color: colors.text, fontWeight: "800" }}>{t("pay_via_upi")}</Text>
-        </Pressable>
+        <Animated.Text
+          style={{
+            color: colors.text,
+            fontSize: fontSizes.subtitle + 2,
+            fontWeight: "900",
+            marginTop: 2,
+            transform: [{ scale: totalPulseAnim }],
+            opacity: totalPulseAnim.interpolate({ inputRange: [1, 1.08], outputRange: [1, 0.88] }),
+          }}
+        >
+          ₹{grandTotal}
+        </Animated.Text>
 
         <Pressable onPress={checkoutOnWhatsApp} style={({ pressed }) => ({ marginTop: spacing.sm, backgroundColor: colors.primary, paddingVertical: 14, borderRadius: radius.md, alignItems: "center", opacity: pressed ? 0.9 : 1 })}>
           <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>{t("checkout_whatsapp")}</Text>
         </Pressable>
+
+        {upiId.trim() ? (
+          <Pressable onPress={() => setShowUpiModal(true)} style={({ pressed }) => ({ marginTop: spacing.sm, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, paddingVertical: 14, borderRadius: radius.md, alignItems: "center", opacity: pressed ? 0.9 : 1 })}>
+            <Text style={{ color: colors.text, fontWeight: "800" }}>{t("pay_via_upi")}</Text>
+          </Pressable>
+        ) : null}
       </View>
 
       <Modal visible={showUpiModal} transparent animationType="slide" onRequestClose={() => setShowUpiModal(false)}>
