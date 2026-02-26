@@ -1,6 +1,6 @@
-import { View, Text, ScrollView, Pressable, Animated, Alert, Linking } from "react-native";
+import { View, Text, ScrollView, Pressable, Animated, Alert, Linking, Image } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { products } from "../lib/data";
+import { productImagePlaceholder, products } from "../lib/data";
 import { useCart } from "../lib/cart";
 import { useRef, useState } from "react";
 import { useTheme } from "../theme/ThemeProvider";
@@ -55,6 +55,11 @@ export default function ProductDetail() {
   // qty in cart
   const cartItem = items.find((i) => i.id === product.id);
   const qty = cartItem?.qty ?? 0;
+
+  const productImages =
+    product.images && product.images.length > 0
+      ? product.images
+      : [productImagePlaceholder];
 
   async function openWhatsAppOrder() {
     if (qty === 0) {
@@ -117,9 +122,31 @@ Total: ₹${total}`;
           </Text>
         </Pressable>
 
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          style={{ marginTop: 18 }}
+        >
+          {productImages.map((image, index) => (
+            <Image
+              key={`${product.id}_${index}`}
+              source={{ uri: image }}
+              style={{
+                width: 300,
+                height: 200,
+                borderRadius: 14,
+                marginRight: 10,
+                backgroundColor: colors.surface,
+              }}
+              resizeMode="cover"
+            />
+          ))}
+        </ScrollView>
+
         <View
           style={{
-            marginTop: 18,
+            marginTop: 14,
             borderWidth: 1,
             borderColor: colors.border,
             borderRadius: 16,

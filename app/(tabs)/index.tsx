@@ -6,8 +6,9 @@ import {
   ScrollView,
   Pressable,
   Animated,
+  Image,
 } from "react-native";
-import { categories, products } from "../lib/data";
+import { categories, productImagePlaceholder, products } from "../lib/data";
 import { useCart } from "../lib/cart";
 import { router, useFocusEffect } from "expo-router";
 import { useTheme } from "../theme/ThemeProvider";
@@ -149,7 +150,13 @@ export default function Home() {
                 backgroundColor: colors.surface,
               }}
             >
-              <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>{p.name}</Text>
+              <Image
+                source={{ uri: p.images?.[0] ?? productImagePlaceholder }}
+                style={{ width: "100%", height: 140, borderRadius: 12, backgroundColor: colors.background }}
+                resizeMode="cover"
+              />
+
+              <Text style={{ marginTop: 10, fontSize: 16, fontWeight: "800", color: colors.text }}>{p.name}</Text>
               <Text style={{ marginTop: 4, color: colors.mutedText }}>
                 Seller: {p.seller} • {p.category}
               </Text>

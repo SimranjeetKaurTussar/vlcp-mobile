@@ -10,6 +10,7 @@ export type SellerProduct = {
   seller: string;
   category: string;
   stock: number;
+  images?: string[];
 };
 
 export type OrderStatus = "Placed" | "Confirmed" | "Delivered";
