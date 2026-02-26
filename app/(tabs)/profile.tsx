@@ -15,7 +15,7 @@ import { getStoredAddress, setStoredAddress, type AppLanguage } from "../lib/sto
 import { useT } from "../i18n/useT";
 
 export default function Profile() {
-  const { mode, setMode, colors } = useTheme();
+  const { mode, setMode, colors, spacing, radius, fontSizes, shadows } = useTheme();
   const { t, language, setLanguage } = useT();
   const [name, setName] = useState(businessName);
   const [number, setNumber] = useState(whatsappNumber);
@@ -52,9 +52,9 @@ export default function Profile() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.background }}
-      contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+      contentContainerStyle={{ padding: spacing.lg, paddingBottom: 40 }}
     >
-      <Text style={{ fontSize: 20, fontWeight: "700", color: colors.text }}>{t("profile_title")}</Text>
+      <Text style={{ fontSize: fontSizes.subtitle + 2, fontWeight: "700", color: colors.text }}>{t("profile_title")}</Text>
 
       <Text style={{ marginTop: 24, color: colors.mutedText, fontWeight: "600" }}>
         Theme
@@ -98,9 +98,10 @@ export default function Profile() {
           borderWidth: 1,
           borderColor: colors.border,
           paddingVertical: 12,
-          borderRadius: 12,
+          borderRadius: radius.md,
           alignItems: "center",
           backgroundColor: colors.surface,
+          ...shadows.card,
         }}
       >
         <Text style={{ color: colors.text, fontWeight: "700" }}>{t("view_orders")}</Text>
@@ -121,8 +122,8 @@ export default function Profile() {
           marginTop: 8,
           borderWidth: 1,
           borderColor: colors.border,
-          borderRadius: 12,
-          padding: 12,
+          borderRadius: radius.md,
+          padding: spacing.sm,
           backgroundColor: colors.surface,
           color: colors.text,
         }}
@@ -143,8 +144,8 @@ export default function Profile() {
           marginTop: 8,
           borderWidth: 1,
           borderColor: colors.border,
-          borderRadius: 12,
-          padding: 12,
+          borderRadius: radius.md,
+          padding: spacing.sm,
           backgroundColor: colors.surface,
           color: colors.text,
         }}
@@ -162,8 +163,8 @@ export default function Profile() {
           marginTop: 8,
           borderWidth: 1,
           borderColor: colors.border,
-          borderRadius: 12,
-          padding: 12,
+          borderRadius: radius.md,
+          padding: spacing.sm,
           backgroundColor: colors.surface,
           color: colors.text,
         }}
@@ -183,8 +184,8 @@ export default function Profile() {
           marginTop: 8,
           borderWidth: 1,
           borderColor: colors.border,
-          borderRadius: 12,
-          padding: 12,
+          borderRadius: radius.md,
+          padding: spacing.sm,
           backgroundColor: colors.surface,
           color: colors.text,
         }}
@@ -223,13 +224,14 @@ export default function Profile() {
 
       <Pressable
         onPress={saveBusinessSettings}
-        style={{
+        style={({ pressed }) => ({
           marginTop: 16,
           backgroundColor: colors.primary,
           paddingVertical: 12,
           borderRadius: 12,
           alignItems: "center",
-        }}
+          opacity: pressed ? 0.9 : 1,
+        })}
       >
         <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>{t("save_settings")}</Text>
       </Pressable>

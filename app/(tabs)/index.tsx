@@ -17,7 +17,7 @@ import { useT } from "../i18n/useT";
 
 export default function Home() {
   const { items, addItem, decItem } = useCart();
-  const { colors } = useTheme();
+  const { colors, spacing, radius, fontSizes, shadows } = useTheme();
   const { t } = useT();
 
   const [query, setQuery] = useState("");
@@ -27,6 +27,8 @@ export default function Home() {
 
   const [toast, setToast] = useState<string>("");
   const toastAnim = useRef(new Animated.Value(0)).current;
+  const cardPressAnim = useRef(new Animated.Value(1)).current;
+  const [pressedCardId, setPressedCardId] = useState<string | null>(null);
 
   function showToast(message: string) {
     setToast(message);
@@ -47,6 +49,16 @@ export default function Home() {
     }, 1200);
   }
 
+
+
+  function onCardPressIn(id: string) {
+    setPressedCardId(id);
+    Animated.spring(cardPressAnim, { toValue: 0.98, useNativeDriver: true, speed: 25, bounciness: 4 }).start();
+  }
+
+  function onCardPressOut() {
+    Animated.spring(cardPressAnim, { toValue: 1, useNativeDriver: true, speed: 25, bounciness: 4 }).start(() => setPressedCardId(null));
+  }
 
   useFocusEffect(
     useCallback(() => {
@@ -76,8 +88,8 @@ export default function Home() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 90 }}>
-        <Text style={{ fontSize: 26, fontWeight: "800", color: colors.text }}>{t("home_title")}</Text>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: 90 }}>
+        <Text style={{ fontSize: fontSizes.title, fontWeight: "800", color: colors.text }}>{t("home_title")}</Text>
         <Text style={{ marginTop: 6, color: colors.mutedText }}>
           Organic & handmade products from your village
         </Text>
@@ -88,11 +100,11 @@ export default function Home() {
           onChangeText={setQuery}
           placeholder={t("search_placeholder")}
           style={{
-            marginTop: 14,
+            marginTop: spacing.md,
             borderWidth: 1,
             borderColor: colors.border,
-            borderRadius: 14,
-            padding: 12,
+            borderRadius: radius.md,
+            padding: spacing.sm,
             fontSize: 16,
             backgroundColor: colors.surface,
           }}
@@ -102,7 +114,7 @@ export default function Home() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={{ marginTop: 14 }}
+          style={{ marginTop: spacing.md }}
         >
           {["All", ...categories.map((c) => c.name)].map((name) => {
             const active = name === activeCat;
@@ -138,7 +150,7 @@ export default function Home() {
         </Pressable>
 
         {/* Products */}
-        <Text style={{ marginTop: 18, fontSize: 18, fontWeight: "800", color: colors.text }}>
+        <Text style={{ marginTop: spacing.lg, fontSize: fontSizes.subtitle, fontWeight: "800", color: colors.text }}>
           Products
         </Text>
 
@@ -153,7 +165,7 @@ export default function Home() {
                   style={{
                     borderWidth: 1,
                     borderColor: colors.border,
-                    borderRadius: 16,
+                    borderRadius: radius.lg,
                     padding: 14,
                     backgroundColor: colors.surface,
                   }}
@@ -166,17 +178,26 @@ export default function Home() {
             </>
           ) : null}
           {filtered.map((p) => (
-            <Pressable
+            <Animated.View
               key={p.id}
-              onPress={() => router.push(`/product/${p.id}`)}
               style={{
-                borderWidth: 1,
-                borderColor: colors.border,
-                borderRadius: 16,
-                padding: 14,
-                backgroundColor: colors.surface,
+                transform: [{ scale: pressedCardId === p.id ? cardPressAnim : 1 }],
               }}
             >
+              <Pressable
+                onPress={() => router.push(`/product/${p.id}`)}
+                onPressIn={() => onCardPressIn(p.id)}
+                onPressOut={onCardPressOut}
+                style={({ pressed }) => ({
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  borderRadius: radius.lg,
+                  padding: spacing.md,
+                  backgroundColor: colors.surface,
+                  opacity: pressed ? 0.95 : 1,
+                  ...shadows.card,
+                })}
+              >
               <Image
                 source={{ uri: p.images?.[0] ?? productImagePlaceholder }}
                 style={{ width: "100%", height: 140, borderRadius: 12, backgroundColor: colors.background }}
@@ -219,12 +240,13 @@ export default function Home() {
                   if (qty === 0) {
                     return (
                       <Pressable
-                        style={{
+                        style={({ pressed }) => ({
                           backgroundColor: colors.primary,
                           paddingVertical: 10,
                           paddingHorizontal: 14,
-                          borderRadius: 12,
-                        }}
+                          borderRadius: radius.md,
+                          opacity: pressed ? 0.9 : 1,
+                        })}
                         onPress={(event) => {
                           event.stopPropagation();
                           addItem(p);
@@ -275,8 +297,9 @@ export default function Home() {
                   );
                 })()}
               </View>
-            </Pressable>
-          ))}
+              </Pressable>
+            </Animated.View>
+          ))
 
           {!isLoadingProducts && filtered.length === 0 ? (
             <View
@@ -284,7 +307,7 @@ export default function Home() {
                 marginTop: 10,
                 borderWidth: 1,
                 borderColor: colors.border,
-                borderRadius: 14,
+                borderRadius: radius.md,
                 padding: 14,
                 backgroundColor: colors.surface,
               }}
@@ -321,7 +344,7 @@ export default function Home() {
               backgroundColor: colors.primary,
               paddingVertical: 12,
               paddingHorizontal: 14,
-              borderRadius: 14,
+              borderRadius: radius.md,
               alignItems: "center",
             }}
           >

@@ -11,7 +11,7 @@ import { useT } from "../i18n/useT";
 export default function ProductDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { addItem, decItem, items } = useCart();
-  const { colors } = useTheme();
+  const { colors, spacing, radius, fontSizes, shadows } = useTheme();
   const { t } = useT();
 
   const [toast, setToast] = useState("");
@@ -132,12 +132,12 @@ Total: ₹${total}`;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 160 }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: 160 }}>
         <Pressable onPress={() => router.back()}>
           <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>← Back</Text>
         </Pressable>
 
-        <Text style={{ marginTop: 14, fontSize: 26, fontWeight: "900", color: colors.text }}>
+        <Text style={{ marginTop: 14, fontSize: fontSizes.title, fontWeight: "900", color: colors.text }}>
           {product.name}
         </Text>
 
@@ -171,7 +171,7 @@ Total: ₹${total}`;
               style={{
                 width: 300,
                 height: 200,
-                borderRadius: 14,
+                borderRadius: radius.md,
                 marginRight: 10,
                 backgroundColor: colors.surface,
               }}
@@ -185,9 +185,10 @@ Total: ₹${total}`;
             marginTop: 14,
             borderWidth: 1,
             borderColor: colors.border,
-            borderRadius: 16,
-            padding: 14,
+            borderRadius: radius.lg,
+            padding: spacing.md,
             backgroundColor: colors.surface,
+            ...shadows.card,
           }}
         >
           <Text style={{ fontSize: 18, fontWeight: "900", color: colors.text }}>
@@ -206,7 +207,7 @@ Total: ₹${total}`;
           left: 0,
           right: 0,
           bottom: 0,
-          padding: 16,
+          padding: spacing.md,
           borderTopWidth: 1,
           borderTopColor: colors.border,
           backgroundColor: colors.surface,
@@ -267,13 +268,14 @@ Total: ₹${total}`;
                 router.push("/cart");
               }
             }}
-            style={{
+            style={({ pressed }) => ({
               flex: 1,
               backgroundColor: colors.primary,
               paddingVertical: 14,
-              borderRadius: 14,
+              borderRadius: radius.md,
               alignItems: "center",
-            }}
+              opacity: pressed ? 0.9 : 1,
+            })}
           >
             <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>
               {qty === 0 ? t("add_to_cart") : `${t("go_to_cart")} (${qty})`}
@@ -282,14 +284,15 @@ Total: ₹${total}`;
 
           <Pressable
             onPress={openWhatsAppOrder}
-            style={{
+            style={({ pressed }) => ({
               flex: 1,
               borderWidth: 1,
               borderColor: colors.border,
               paddingVertical: 14,
-              borderRadius: 14,
+              borderRadius: radius.md,
               alignItems: "center",
-            }}
+              opacity: pressed ? 0.9 : 1,
+            })}
           >
             <Text style={{ fontWeight: "900", color: colors.text }}>{t("buy")}</Text>
           </Pressable>
@@ -321,7 +324,7 @@ Total: ₹${total}`;
               backgroundColor: colors.primary,
               paddingVertical: 12,
               paddingHorizontal: 14,
-              borderRadius: 14,
+              borderRadius: radius.md,
               alignItems: "center",
             }}
           >

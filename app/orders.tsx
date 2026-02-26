@@ -8,7 +8,7 @@ import { useTheme } from "./theme/ThemeProvider";
 import { useT } from "./i18n/useT";
 
 export default function OrdersScreen() {
-  const { colors } = useTheme();
+  const { colors, spacing, radius, fontSizes, shadows } = useTheme();
   const { t } = useT();
   const { addItem, clearCart } = useCart();
   const [orders, setOrders] = useState<LocalOrder[]>([]);
@@ -104,17 +104,17 @@ export default function OrdersScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 30 }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: 30 }}>
         <Pressable onPress={() => router.back()}>
           <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>← Back</Text>
         </Pressable>
 
-        <Text style={{ marginTop: 14, fontSize: 24, fontWeight: "800", color: colors.text }}>
+        <Text style={{ marginTop: 14, fontSize: fontSizes.subtitle + 6, fontWeight: "800", color: colors.text }}>
           {t("orders")}
         </Text>
 
         {!isLoading && orders.length === 0 ? (
-          <View style={{ marginTop: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 14, padding: 14, backgroundColor: colors.surface }}>
+          <View style={{ marginTop: 12, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: spacing.md, backgroundColor: colors.surface, ...shadows.card }}>
             <Text style={{ color: colors.text, fontWeight: "700" }}>{t("no_orders")}</Text>
             <Text style={{ marginTop: 4, color: colors.mutedText }}>Your placed orders will appear here.</Text>
           </View>
@@ -138,9 +138,10 @@ export default function OrdersScreen() {
               style={{
                 borderWidth: 1,
                 borderColor: colors.border,
-                borderRadius: 14,
-                padding: 12,
+                borderRadius: radius.lg,
+                padding: spacing.sm,
                 backgroundColor: colors.surface,
+                ...shadows.card,
               }}
             >
               <Text style={{ color: colors.text, fontWeight: "700" }}>
@@ -176,13 +177,14 @@ export default function OrdersScreen() {
 
               <Pressable
                 onPress={() => orderAgain(order)}
-                style={{
+                style={({ pressed }) => ({
                   marginTop: 10,
                   backgroundColor: colors.primary,
                   borderRadius: 10,
                   paddingVertical: 10,
                   alignItems: "center",
-                }}
+                  opacity: pressed ? 0.9 : 1,
+                })}
               >
                 <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>Order Again</Text>
               </Pressable>

@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { darkColors, lightColors, radius, spacing, typography } from "./tokens";
+import { darkColors, lightColors, radius, spacing, fontSizes, shadows, typography } from "./tokens";
 import { getStoredThemeMode, setStoredThemeMode, type ThemeMode } from "../lib/storage";
 import { loadBusinessConfig } from "../lib/config";
 
@@ -21,6 +21,8 @@ type ThemeValue = {
   spacing: typeof spacing;
   radius: typeof radius;
   typography: typeof typography;
+  fontSizes: typeof fontSizes;
+  shadows: typeof shadows;
 };
 
 const ThemeContext = createContext<ThemeValue | null>(null);
@@ -81,6 +83,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       spacing,
       radius,
       typography,
+      fontSizes,
+      shadows,
     };
   }, [mode, resolvedMode]);
 
