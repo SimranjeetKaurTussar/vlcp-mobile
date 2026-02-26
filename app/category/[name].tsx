@@ -12,11 +12,14 @@ import { useCart } from "../lib/cart";
 import { products } from "../lib/data";
 import { useTheme } from "../theme/ThemeProvider";
 
+type SortOption = "default" | "lowToHigh" | "highToLow";
+
 export default function CategoryProducts() {
   const { name } = useLocalSearchParams<{ name: string }>();
   const categoryName = decodeURIComponent(name ?? "");
 
   const [query, setQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("default");
   const [toast, setToast] = useState("");
   const toastAnim = useRef(new Animated.Value(0)).current;
 
@@ -56,6 +59,20 @@ export default function CategoryProducts() {
     });
   }, [categoryName, query]);
 
+  const displayedProducts = useMemo(() => {
+    const next = [...filteredProducts];
+
+    if (sortBy === "lowToHigh") {
+      next.sort((a, b) => a.price - b.price);
+    }
+
+    if (sortBy === "highToLow") {
+      next.sort((a, b) => b.price - a.price);
+    }
+
+    return next;
+  }, [filteredProducts, sortBy]);
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 90 }}>
@@ -92,8 +109,46 @@ export default function CategoryProducts() {
           }}
         />
 
+        <View style={{ marginTop: 12 }}>
+          <Text style={{ color: colors.mutedText, fontWeight: "600" }}>Sort</Text>
+          <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+            {[
+              { key: "default", label: "Default" },
+              { key: "lowToHigh", label: "Price: Low to High" },
+              { key: "highToLow", label: "Price: High to Low" },
+            ].map((option) => {
+              const active = sortBy === option.key;
+
+              return (
+                <Pressable
+                  key={option.key}
+                  onPress={() => setSortBy(option.key as SortOption)}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: active ? colors.primary : colors.border,
+                    backgroundColor: active ? colors.primary : colors.surface,
+                    borderRadius: 999,
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: active ? colors.onPrimary : colors.text,
+                      fontWeight: "600",
+                      fontSize: 12,
+                    }}
+                  >
+                    {option.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
         <View style={{ marginTop: 14, gap: 12 }}>
-          {filteredProducts.map((product) => (
+          {displayedProducts.map((product) => (
             <Pressable
               key={product.id}
               onPress={() => router.push(`/product/${product.id}`)}
@@ -145,7 +200,7 @@ export default function CategoryProducts() {
             </Pressable>
           ))}
 
-          {filteredProducts.length === 0 ? (
+          {displayedProducts.length === 0 ? (
             <Text style={{ marginTop: 8, color: colors.mutedText }}>
               No products found
             </Text>

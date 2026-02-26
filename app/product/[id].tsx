@@ -1,12 +1,4 @@
-import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  Animated,
-  Alert,
-  Linking,
-} from "react-native";
+import { View, Text, ScrollView, Pressable, Animated, Alert, Linking } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { products } from "../lib/data";
 import { useCart } from "../lib/cart";
@@ -65,7 +57,6 @@ export default function ProductDetail() {
   const qty = cartItem?.qty ?? 0;
 
   async function openWhatsAppOrder() {
-    if (!product) return;
     if (qty === 0) {
       showToast("Add quantity first");
       return;
@@ -94,7 +85,7 @@ Total: ₹${total}`;
     if (canOpenWeb) {
       Alert.alert(
         "WhatsApp not installed",
-        "No worries — opening WhatsApp web checkout in your browser.",
+        "No worries — opening WhatsApp web checkout in your browser."
       );
       await Linking.openURL(webUrl);
       return;
@@ -102,7 +93,7 @@ Total: ₹${total}`;
 
     Alert.alert(
       "Unable to open WhatsApp",
-      "Please install WhatsApp and try again.",
+      "Please install WhatsApp and try again."
     );
   }
 
@@ -110,19 +101,10 @@ Total: ₹${total}`;
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 160 }}>
         <Pressable onPress={() => router.back()}>
-          <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>
-            ← Back
-          </Text>
+          <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>← Back</Text>
         </Pressable>
 
-        <Text
-          style={{
-            marginTop: 14,
-            fontSize: 26,
-            fontWeight: "900",
-            color: colors.text,
-          }}
-        >
+        <Text style={{ marginTop: 14, fontSize: 26, fontWeight: "900", color: colors.text }}>
           {product.name}
         </Text>
 
@@ -171,9 +153,7 @@ Total: ₹${total}`;
             marginBottom: 12,
           }}
         >
-          <Text style={{ fontSize: 16, fontWeight: "900", color: colors.text }}>
-            Quantity
-          </Text>
+          <Text style={{ fontSize: 16, fontWeight: "900", color: colors.text }}>Quantity</Text>
 
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <Pressable
@@ -186,16 +166,10 @@ Total: ₹${total}`;
                 opacity: qty > 0 ? 1 : 0.4,
               }}
             >
-              <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>
-                −
-              </Text>
+              <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>−</Text>
             </Pressable>
 
-            <Text
-              style={{ fontSize: 16, fontWeight: "900", color: colors.text }}
-            >
-              {qty}
-            </Text>
+            <Text style={{ fontSize: 16, fontWeight: "900", color: colors.text }}>{qty}</Text>
 
             <Pressable
               onPress={() => {
@@ -209,9 +183,7 @@ Total: ₹${total}`;
                 borderRadius: 12,
               }}
             >
-              <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>
-                +
-              </Text>
+              <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>+</Text>
             </Pressable>
           </View>
         </View>
