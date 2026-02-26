@@ -1,4 +1,12 @@
-import { View, Text, ScrollView, Pressable, Animated, Alert, Linking } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  Animated,
+  Alert,
+  Linking,
+} from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { products } from "../lib/data";
 import { useCart } from "../lib/cart";
@@ -56,55 +64,82 @@ export default function ProductDetail() {
   const cartItem = items.find((i) => i.id === product.id);
   const qty = cartItem?.qty ?? 0;
 
-  async function openWhatsAppOrder() {
+  function normalizePhone(phone: string) {
+    return phone.replace(/[^\d]/g, "");
+  }
+
+  // ✅ Non-nullable type so TS never complains
+  type Product = NonNullable<typeof product>;
+
+  async function openWhatsAppOrder(p: Product) {
     if (qty === 0) {
       showToast("Add quantity first");
       return;
     }
 
-    const total = qty * product.price;
-    const message = `Hi ${businessName}, I want to order:
-Product: ${product.name}
-Qty: ${qty}
-Price: ₹${product.price}/${product.unit}
-Total: ₹${total}`;
-    const encoded = encodeURIComponent(message);
-
-    const appUrl = `whatsapp://send?phone=${whatsappNumber}&text=${encoded}`;
-    const webUrl = `https://wa.me/${whatsappNumber}?text=${encoded}`;
-
-    const hasWhatsApp = await Linking.canOpenURL(appUrl);
-
-    if (hasWhatsApp) {
-      await Linking.openURL(appUrl);
+    const phone = normalizePhone(whatsappNumber);
+    if (!phone) {
+      Alert.alert(
+        "WhatsApp number missing",
+        "Please set whatsappNumber in app/lib/config.ts"
+      );
       return;
     }
 
-    const canOpenWeb = await Linking.canOpenURL(webUrl);
+    const total = qty * p.price;
 
-    if (canOpenWeb) {
+    const message =
+      `Hi ${businessName}, I want to order:\n` +
+      `Product: ${p.name}\n` +
+      `Qty: ${qty}\n` +
+      `Price: ₹${p.price}/${p.unit}\n` +
+      `Total: ₹${total}`;
+
+    const encoded = encodeURIComponent(message);
+
+    const appUrl = `whatsapp://send?phone=${phone}&text=${encoded}`;
+    const webUrl = `https://wa.me/${phone}?text=${encoded}`;
+
+    try {
+      const hasWhatsApp = await Linking.canOpenURL(appUrl);
+
+      if (hasWhatsApp) {
+        await Linking.openURL(appUrl);
+        return;
+      }
+
       Alert.alert(
         "WhatsApp not installed",
         "No worries — opening WhatsApp web checkout in your browser."
       );
       await Linking.openURL(webUrl);
-      return;
+    } catch {
+      Alert.alert(
+        "Unable to open WhatsApp",
+        "Please install WhatsApp and try again."
+      );
     }
-
-    Alert.alert(
-      "Unable to open WhatsApp",
-      "Please install WhatsApp and try again."
-    );
   }
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 160 }}>
         <Pressable onPress={() => router.back()}>
-          <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>← Back</Text>
+          <Text
+            style={{ fontSize: 16, fontWeight: "800", color: colors.text }}
+          >
+            ← Back
+          </Text>
         </Pressable>
 
-        <Text style={{ marginTop: 14, fontSize: 26, fontWeight: "900", color: colors.text }}>
+        <Text
+          style={{
+            marginTop: 14,
+            fontSize: 26,
+            fontWeight: "900",
+            color: colors.text,
+          }}
+        >
           {product.name}
         </Text>
 
@@ -153,7 +188,11 @@ Total: ₹${total}`;
             marginBottom: 12,
           }}
         >
-          <Text style={{ fontSize: 16, fontWeight: "900", color: colors.text }}>Quantity</Text>
+          <Text
+            style={{ fontSize: 16, fontWeight: "900", color: colors.text }}
+          >
+            Quantity
+          </Text>
 
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <Pressable
@@ -166,10 +205,16 @@ Total: ₹${total}`;
                 opacity: qty > 0 ? 1 : 0.4,
               }}
             >
-              <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>−</Text>
+              <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>
+                −
+              </Text>
             </Pressable>
 
-            <Text style={{ fontSize: 16, fontWeight: "900", color: colors.text }}>{qty}</Text>
+            <Text
+              style={{ fontSize: 16, fontWeight: "900", color: colors.text }}
+            >
+              {qty}
+            </Text>
 
             <Pressable
               onPress={() => {
@@ -183,7 +228,9 @@ Total: ₹${total}`;
                 borderRadius: 12,
               }}
             >
-              <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>+</Text>
+              <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>
+                +
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -213,7 +260,7 @@ Total: ₹${total}`;
           </Pressable>
 
           <Pressable
-            onPress={openWhatsAppOrder}
+            onPress={() => openWhatsAppOrder(product)}
             style={{
               flex: 1,
               borderWidth: 1,
