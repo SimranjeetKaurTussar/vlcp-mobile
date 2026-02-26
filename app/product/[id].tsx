@@ -108,9 +108,14 @@ Total: ₹${total}`;
           {product.name}
         </Text>
 
-        <Text style={{ marginTop: 6, color: colors.mutedText }}>
-          Seller: {product.seller} • {product.category}
-        </Text>
+        <Pressable
+          onPress={() => router.push(`/seller/${encodeURIComponent(product.seller)}`)}
+          style={{ marginTop: 6 }}
+        >
+          <Text style={{ color: colors.primary, fontWeight: "700" }}>
+            Seller: {product.seller} • {product.category}
+          </Text>
+        </Pressable>
 
         <View
           style={{
