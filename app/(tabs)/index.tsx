@@ -10,9 +10,11 @@ import {
 import { categories, products } from "../lib/data";
 import { useCart } from "../lib/cart";
 import { router } from "expo-router";
+import { useTheme } from "../theme/ThemeProvider";
 
 export default function Home() {
-  const { addItem } = useCart();
+  const { items, addItem, decItem } = useCart();
+  const { colors } = useTheme();
 
   const [query, setQuery] = useState("");
   const [activeCat, setActiveCat] = useState<string>("All");
@@ -53,10 +55,10 @@ export default function Home() {
   }, [query, activeCat]);
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 90 }}>
-        <Text style={{ fontSize: 26, fontWeight: "800" }}>VLCP</Text>
-        <Text style={{ marginTop: 6, opacity: 0.7 }}>
+        <Text style={{ fontSize: 26, fontWeight: "800", color: colors.text }}>VLCP</Text>
+        <Text style={{ marginTop: 6, color: colors.mutedText }}>
           Organic & handmade products from your village
         </Text>
 
@@ -68,11 +70,11 @@ export default function Home() {
           style={{
             marginTop: 14,
             borderWidth: 1,
-            borderColor: "#e5e5e5",
+            borderColor: colors.border,
             borderRadius: 14,
             padding: 12,
             fontSize: 16,
-            backgroundColor: "white",
+            backgroundColor: colors.surface,
           }}
         />
 
@@ -94,13 +96,13 @@ export default function Home() {
                   borderRadius: 999,
                   marginRight: 10,
                   borderWidth: 1,
-                  borderColor: active ? "black" : "#e5e5e5",
-                  backgroundColor: active ? "black" : "white",
+                  borderColor: active ? colors.primary : colors.border,
+                  backgroundColor: active ? colors.primary : colors.surface,
                 }}
               >
                 <Text
                   style={{
-                    color: active ? "white" : "black",
+                    color: active ? colors.onPrimary : colors.text,
                     fontWeight: "700",
                   }}
                 >
@@ -111,8 +113,12 @@ export default function Home() {
           })}
         </ScrollView>
 
+        <Pressable onPress={() => router.push("/categories")} style={{ marginTop: 10 }}>
+          <Text style={{ color: colors.primary, fontWeight: "700" }}>View all categories</Text>
+        </Pressable>
+
         {/* Products */}
-        <Text style={{ marginTop: 18, fontSize: 18, fontWeight: "800" }}>
+        <Text style={{ marginTop: 18, fontSize: 18, fontWeight: "800", color: colors.text }}>
           Products
         </Text>
 
@@ -123,14 +129,14 @@ export default function Home() {
               onPress={() => router.push(`/product/${p.id}`)}
               style={{
                 borderWidth: 1,
-                borderColor: "#eee",
+                borderColor: colors.border,
                 borderRadius: 16,
                 padding: 14,
-                backgroundColor: "white",
+                backgroundColor: colors.surface,
               }}
             >
-              <Text style={{ fontSize: 16, fontWeight: "800" }}>{p.name}</Text>
-              <Text style={{ marginTop: 4, opacity: 0.7 }}>
+              <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>{p.name}</Text>
+              <Text style={{ marginTop: 4, color: colors.mutedText }}>
                 Seller: {p.seller} • {p.category}
               </Text>
 
@@ -142,30 +148,90 @@ export default function Home() {
                   justifyContent: "space-between",
                 }}
               >
-                <Text style={{ fontSize: 16, fontWeight: "800" }}>
-                  ₹{p.price} / {p.unit}
-                </Text>
+                <View>
+                  <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>
+                    ₹{p.price} / {p.unit}
+                  </Text>
+                  {(() => {
+                    const cartItem = items.find((i) => i.id === p.id);
+                    const qty = cartItem?.qty ?? 0;
 
-                <Pressable
-                  style={{
-                    backgroundColor: "black",
-                    paddingVertical: 10,
-                    paddingHorizontal: 14,
-                    borderRadius: 12,
-                  }}
-                  onPress={() => {
-                    addItem(p);
-                    showToast("Added to cart ✅");
-                  }}
-                >
-                  <Text style={{ color: "white", fontWeight: "800" }}>Add</Text>
-                </Pressable>
+                    return qty > 0 ? (
+                      <Text style={{ marginTop: 4, color: colors.mutedText, fontSize: 13 }}>
+                        In cart: {qty}
+                      </Text>
+                    ) : null;
+                  })()}
+                </View>
+
+                {(() => {
+                  const cartItem = items.find((i) => i.id === p.id);
+                  const qty = cartItem?.qty ?? 0;
+
+                  if (qty === 0) {
+                    return (
+                      <Pressable
+                        style={{
+                          backgroundColor: colors.primary,
+                          paddingVertical: 10,
+                          paddingHorizontal: 14,
+                          borderRadius: 12,
+                        }}
+                        onPress={(event) => {
+                          event.stopPropagation();
+                          addItem(p);
+                          showToast("Added to cart ✅");
+                        }}
+                      >
+                        <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>Add</Text>
+                      </Pressable>
+                    );
+                  }
+
+                  return (
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                      <Pressable
+                        onPress={(event) => {
+                          event.stopPropagation();
+                          decItem(p.id);
+                        }}
+                        style={{
+                          backgroundColor: colors.primary,
+                          paddingHorizontal: 12,
+                          paddingVertical: 8,
+                          borderRadius: 10,
+                        }}
+                      >
+                        <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>−</Text>
+                      </Pressable>
+
+                      <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>
+                        {qty}
+                      </Text>
+
+                      <Pressable
+                        onPress={(event) => {
+                          event.stopPropagation();
+                          addItem(p);
+                        }}
+                        style={{
+                          backgroundColor: colors.primary,
+                          paddingHorizontal: 12,
+                          paddingVertical: 8,
+                          borderRadius: 10,
+                        }}
+                      >
+                        <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>+</Text>
+                      </Pressable>
+                    </View>
+                  );
+                })()}
               </View>
             </Pressable>
           ))}
 
           {filtered.length === 0 ? (
-            <Text style={{ marginTop: 10, opacity: 0.7 }}>
+            <Text style={{ marginTop: 10, color: colors.mutedText }}>
               No products found.
             </Text>
           ) : null}
@@ -194,14 +260,14 @@ export default function Home() {
         >
           <View
             style={{
-              backgroundColor: "black",
+              backgroundColor: colors.primary,
               paddingVertical: 12,
               paddingHorizontal: 14,
               borderRadius: 14,
               alignItems: "center",
             }}
           >
-            <Text style={{ color: "white", fontWeight: "800" }}>{toast}</Text>
+            <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>{toast}</Text>
           </View>
         </Animated.View>
       ) : null}
