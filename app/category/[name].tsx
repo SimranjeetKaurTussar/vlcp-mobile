@@ -1,26 +1,27 @@
+import { router, useLocalSearchParams } from "expo-router";
 import { useMemo, useRef, useState } from "react";
 import {
-  View,
+  Animated,
+  Pressable,
+  ScrollView,
   Text,
   TextInput,
-  ScrollView,
-  Pressable,
-  Animated,
+  View,
 } from "react-native";
-import { categories, products } from "../lib/data";
 import { useCart } from "../lib/cart";
-import { router } from "expo-router";
+import { products } from "../lib/data";
 import { useTheme } from "../theme/ThemeProvider";
 
-export default function Home() {
-  const { addItem } = useCart();
-  const { colors } = useTheme();
+export default function CategoryProducts() {
+  const { name } = useLocalSearchParams<{ name: string }>();
+  const categoryName = decodeURIComponent(name ?? "");
 
   const [query, setQuery] = useState("");
-  const [activeCat, setActiveCat] = useState<string>("All");
-
-  const [toast, setToast] = useState<string>("");
+  const [toast, setToast] = useState("");
   const toastAnim = useRef(new Animated.Value(0)).current;
+
+  const { addItem } = useCart();
+  const { colors } = useTheme();
 
   function showToast(message: string) {
     setToast(message);
@@ -41,28 +42,40 @@ export default function Home() {
     }, 1200);
   }
 
-  const filtered = useMemo(() => {
+  const filteredProducts = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return products.filter((p) => {
-      const matchesQuery =
-        q.length === 0 ||
-        p.name.toLowerCase().includes(q) ||
-        p.seller.toLowerCase().includes(q);
 
-      const matchesCat = activeCat === "All" || p.category === activeCat;
-      return matchesQuery && matchesCat;
+    return products.filter((product) => {
+      const matchesCategory = product.category === categoryName;
+      const matchesSearch =
+        q.length === 0 ||
+        product.name.toLowerCase().includes(q) ||
+        product.seller.toLowerCase().includes(q);
+
+      return matchesCategory && matchesSearch;
     });
-  }, [query, activeCat]);
+  }, [categoryName, query]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 90 }}>
-        <Text style={{ fontSize: 26, fontWeight: "800", color: colors.text }}>VLCP</Text>
-        <Text style={{ marginTop: 6, color: colors.mutedText }}>
-          Organic & handmade products from your village
+        <Pressable onPress={() => router.back()}>
+          <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>
+            ← Back
+          </Text>
+        </Pressable>
+
+        <Text
+          style={{
+            marginTop: 12,
+            fontSize: 24,
+            fontWeight: "800",
+            color: colors.text,
+          }}
+        >
+          {categoryName}
         </Text>
 
-        {/* Search */}
         <TextInput
           value={query}
           onChangeText={setQuery}
@@ -75,54 +88,15 @@ export default function Home() {
             padding: 12,
             fontSize: 16,
             backgroundColor: colors.surface,
+            color: colors.text,
           }}
         />
 
-        {/* Categories */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ marginTop: 14 }}
-        >
-          {["All", ...categories.map((c) => c.name)].map((name) => {
-            const active = name === activeCat;
-            return (
-              <Pressable
-                key={name}
-                onPress={() => setActiveCat(name)}
-                style={{
-                  paddingVertical: 10,
-                  paddingHorizontal: 14,
-                  borderRadius: 999,
-                  marginRight: 10,
-                  borderWidth: 1,
-                  borderColor: active ? colors.primary : colors.border,
-                  backgroundColor: active ? colors.primary : colors.surface,
-                }}
-              >
-                <Text
-                  style={{
-                    color: active ? colors.onPrimary : colors.text,
-                    fontWeight: "700",
-                  }}
-                >
-                  {name}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-
-        {/* Products */}
-        <Text style={{ marginTop: 18, fontSize: 18, fontWeight: "800", color: colors.text }}>
-          Products
-        </Text>
-
-        <View style={{ marginTop: 10, gap: 12 }}>
-          {filtered.map((p) => (
+        <View style={{ marginTop: 14, gap: 12 }}>
+          {filteredProducts.map((product) => (
             <Pressable
-              key={p.id}
-              onPress={() => router.push(`/product/${p.id}`)}
+              key={product.id}
+              onPress={() => router.push(`/product/${product.id}`)}
               style={{
                 borderWidth: 1,
                 borderColor: colors.border,
@@ -131,9 +105,12 @@ export default function Home() {
                 backgroundColor: colors.surface,
               }}
             >
-              <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>{p.name}</Text>
+              <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>
+                {product.name}
+              </Text>
+
               <Text style={{ marginTop: 4, color: colors.mutedText }}>
-                Seller: {p.seller} • {p.category}
+                Seller: {product.seller}
               </Text>
 
               <View
@@ -145,36 +122,37 @@ export default function Home() {
                 }}
               >
                 <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>
-                  ₹{p.price} / {p.unit}
+                  ₹{product.price} / {product.unit}
                 </Text>
 
                 <Pressable
+                  onPress={() => {
+                    addItem(product);
+                    showToast("Added ✅");
+                  }}
                   style={{
                     backgroundColor: colors.primary,
                     paddingVertical: 10,
                     paddingHorizontal: 14,
                     borderRadius: 12,
                   }}
-                  onPress={() => {
-                    addItem(p);
-                    showToast("Added to cart ✅");
-                  }}
                 >
-                  <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>Add</Text>
+                  <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>
+                    Add
+                  </Text>
                 </Pressable>
               </View>
             </Pressable>
           ))}
 
-          {filtered.length === 0 ? (
-            <Text style={{ marginTop: 10, color: colors.mutedText }}>
-              No products found.
+          {filteredProducts.length === 0 ? (
+            <Text style={{ marginTop: 8, color: colors.mutedText }}>
+              No products found
             </Text>
           ) : null}
         </View>
       </ScrollView>
 
-      {/* ✅ Toast overlay OUTSIDE ScrollView */}
       {toast ? (
         <Animated.View
           pointerEvents="none"
