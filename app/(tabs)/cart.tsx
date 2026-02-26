@@ -13,7 +13,12 @@ import {
 import * as Notifications from "expo-notifications";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "../lib/cart";
-import { saveOrder, type LocalOrder } from "../lib/storage";
+import {
+  getStoredBusinessName,
+  getStoredUpiId,
+  saveOrder,
+  type LocalOrder,
+} from "../lib/storage";
 import { businessName, upiId, whatsappNumber } from "../lib/config";
 import { useTheme } from "../theme/ThemeProvider";
 import { useT } from "../i18n/useT";
@@ -23,12 +28,26 @@ export default function Cart() {
   const { colors, spacing, radius, fontSizes, shadows } = useTheme();
   const { t } = useT();
   const [showUpiModal, setShowUpiModal] = useState(false);
+  const [savedBusinessName, setSavedBusinessName] = useState(businessName);
+  const [savedUpiId, setSavedUpiId] = useState(upiId);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
   const deliveryFee = 0;
   const grandTotal = subtotal + deliveryFee;
 
   const totalPulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    async function loadPaymentSettings() {
+      const storedBusinessName = await getStoredBusinessName();
+      const storedUpiId = await getStoredUpiId();
+      setSavedBusinessName(storedBusinessName || businessName);
+      setSavedUpiId(storedUpiId || upiId);
+    }
+
+    loadPaymentSettings();
+  }, []);
+
   useEffect(() => {
     Animated.sequence([
       Animated.timing(totalPulseAnim, { toValue: 1.08, duration: 120, useNativeDriver: true }),
@@ -38,10 +57,10 @@ export default function Cart() {
 
   const upiPaymentUrl = useMemo(() => {
     const amount = grandTotal.toFixed(2);
-    return `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(
-      businessName
+    return `upi://pay?pa=${encodeURIComponent(savedUpiId)}&pn=${encodeURIComponent(
+      savedBusinessName
     )}&am=${encodeURIComponent(amount)}&cu=INR`;
-  }, [grandTotal]);
+  }, [grandTotal, savedBusinessName, savedUpiId]);
 
   function confirmClearCart() {
     Alert.alert("Clear cart", "Remove all items from cart?", [
@@ -112,8 +131,8 @@ export default function Cart() {
   }
 
   async function openUpiApp() {
-    if (!upiId.trim()) {
-      Alert.alert("UPI ID required", "Please set a UPI ID in Profile settings.");
+    if (!savedUpiId.trim()) {
+      Alert.alert("Please set UPI ID in Profile settings");
       return;
     }
 
@@ -181,40 +200,61 @@ export default function Cart() {
       </ScrollView>
 
       <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.lg, ...shadows.raised }}>
-        <Text style={{ color: colors.mutedText }}>Total amount</Text>
-        <Animated.Text
-          style={{
-            color: colors.text,
-            fontSize: fontSizes.subtitle + 2,
-            fontWeight: "900",
-            marginTop: 2,
-            transform: [{ scale: totalPulseAnim }],
-            opacity: totalPulseAnim.interpolate({ inputRange: [1, 1.08], outputRange: [1, 0.88] }),
-          }}
-        >
-          ₹{grandTotal}
-        </Animated.Text>
+        <View style={{ borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.sm, backgroundColor: colors.background }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+            <Text style={{ color: colors.mutedText }}>Subtotal</Text>
+            <Text style={{ color: colors.text, fontWeight: "700" }}>₹{subtotal}</Text>
+          </View>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
+            <Text style={{ color: colors.mutedText }}>Delivery fee</Text>
+            <Text style={{ color: colors.text, fontWeight: "700" }}>₹{deliveryFee}</Text>
+          </View>
+          <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 8 }} />
+          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+            <Text style={{ color: colors.text, fontWeight: "800" }}>Grand Total</Text>
+            <Animated.Text
+              style={{
+                color: colors.text,
+                fontSize: fontSizes.subtitle,
+                fontWeight: "900",
+                transform: [{ scale: totalPulseAnim }],
+                opacity: totalPulseAnim.interpolate({ inputRange: [1, 1.08], outputRange: [1, 0.88] }),
+              }}
+            >
+              ₹{grandTotal}
+            </Animated.Text>
+          </View>
+          <Text style={{ color: colors.mutedText, fontSize: 12, marginTop: 6 }}>Prices are demo</Text>
+        </View>
 
         <Pressable onPress={checkoutOnWhatsApp} style={({ pressed }) => ({ marginTop: spacing.sm, backgroundColor: colors.primary, paddingVertical: 14, borderRadius: radius.md, alignItems: "center", opacity: pressed ? 0.9 : 1 })}>
           <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>{t("checkout_whatsapp")}</Text>
         </Pressable>
 
-        {upiId.trim() ? (
-          <Pressable onPress={() => setShowUpiModal(true)} style={({ pressed }) => ({ marginTop: spacing.sm, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, paddingVertical: 14, borderRadius: radius.md, alignItems: "center", opacity: pressed ? 0.9 : 1 })}>
-            <Text style={{ color: colors.text, fontWeight: "800" }}>{t("pay_via_upi")}</Text>
-          </Pressable>
-        ) : null}
+        <Pressable
+          onPress={() => {
+            if (!savedUpiId.trim()) {
+              Alert.alert("Please set UPI ID in Profile settings");
+              return;
+            }
+
+            setShowUpiModal(true);
+          }}
+          style={({ pressed }) => ({ marginTop: spacing.sm, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, paddingVertical: 14, borderRadius: radius.md, alignItems: "center", opacity: pressed ? 0.9 : 1 })}
+        >
+          <Text style={{ color: colors.text, fontWeight: "800" }}>{t("pay_via_upi")}</Text>
+        </Pressable>
       </View>
 
       <Modal visible={showUpiModal} transparent animationType="slide" onRequestClose={() => setShowUpiModal(false)}>
         <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" }}>
           <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: spacing.lg, borderWidth: 1, borderColor: colors.border }}>
             <Text style={{ color: colors.text, fontSize: fontSizes.subtitle + 2, fontWeight: "800" }}>{t("pay_via_upi")}</Text>
-            <Text style={{ color: colors.mutedText, marginTop: 6 }}>UPI ID: {upiId || "Not set in Profile settings"}</Text>
+            <Text style={{ color: colors.mutedText, marginTop: 6 }}>UPI ID: {savedUpiId || "Not set in Profile settings"}</Text>
             <Text style={{ color: colors.text, marginTop: 4, fontWeight: "700" }}>Amount: ₹{grandTotal.toFixed(2)}</Text>
 
             <View style={{ alignItems: "center", marginTop: spacing.md }}>
-              {upiId ? (
+              {savedUpiId ? (
                 <Image
                   source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiPaymentUrl)}` }}
                   style={{ width: 180, height: 180, borderRadius: radius.md, backgroundColor: "#FFFFFF" }}
