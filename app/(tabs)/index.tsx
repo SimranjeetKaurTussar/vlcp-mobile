@@ -113,7 +113,7 @@ export default function Home() {
           })}
         </ScrollView>
 
-        <Pressable onPress={() => router.push("/categories")} style={{ marginTop: 10 }}>
+        <Pressable onPress={() => router.push("/(tabs)/categories")} style={{ marginTop: 10 }}>
           <Text style={{ color: colors.primary, fontWeight: "700" }}>View all categories</Text>
         </Pressable>
 
