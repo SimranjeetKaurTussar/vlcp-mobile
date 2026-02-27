@@ -92,7 +92,7 @@ export default function Cart() {
         unit: item.unit,
       })),
       total: grandTotal,
-      status: "Pending",
+      status: "PENDING",
     };
 
     await saveOrder(order);

@@ -11,7 +11,14 @@ import {
   upiId,
   whatsappNumber,
 } from "../lib/config";
-import { getStoredAddress, setStoredAddress, type AppLanguage } from "../lib/storage";
+import {
+  getStoredAddress,
+  getStoredUserRole,
+  setStoredAddress,
+  setStoredUserRole,
+  type AppLanguage,
+  type UserRole,
+} from "../lib/storage";
 import { useT } from "../i18n/useT";
 
 export default function Profile() {
@@ -21,6 +28,7 @@ export default function Profile() {
   const [number, setNumber] = useState(whatsappNumber);
   const [address, setAddress] = useState("");
   const [upi, setUpi] = useState(upiId);
+  const [role, setRole] = useState<UserRole>("customer");
 
   useEffect(() => {
     async function hydrateBusinessSettings() {
@@ -29,6 +37,7 @@ export default function Profile() {
       setNumber(whatsappNumber);
       setUpi(upiId);
       setAddress(await getStoredAddress());
+      setRole(await getStoredUserRole());
     }
 
     hydrateBusinessSettings();
@@ -41,6 +50,7 @@ export default function Profile() {
     await updateWhatsAppNumber(cleanNumber);
     await updateUpiId(upi);
     await setStoredAddress(address);
+    await setStoredUserRole(role);
 
     setName(name.trim() || "VLCP");
     setNumber(cleanNumber);
@@ -191,6 +201,32 @@ export default function Profile() {
         }}
       />
 
+
+      <Text style={{ marginTop: 20, color: colors.mutedText, fontWeight: "600" }}>Role</Text>
+      <View style={{ flexDirection: "row", marginTop: 10, gap: 10, flexWrap: "wrap" }}>
+        {(["customer", "seller", "godown", "delivery", "admin"] as const).map((option) => {
+          const active = role === option;
+
+          return (
+            <Pressable
+              key={option}
+              onPress={() => setRole(option)}
+              style={{
+                paddingVertical: 10,
+                paddingHorizontal: 14,
+                borderRadius: 999,
+                borderWidth: 1,
+                borderColor: active ? colors.primary : colors.border,
+                backgroundColor: active ? colors.primary : colors.surface,
+              }}
+            >
+              <Text style={{ color: active ? colors.onPrimary : colors.text, fontWeight: "700", textTransform: "capitalize" }}>
+                {option}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
       <Text style={{ marginTop: 20, color: colors.mutedText, fontWeight: "600" }}>
         {t("profile_language")}
       </Text>

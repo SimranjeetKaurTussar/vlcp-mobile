@@ -52,24 +52,31 @@ export default function OrdersScreen() {
   }
 
   function statusLabel(status: LocalOrder["status"]) {
-    if (status === "Delivered") {
-      return "Delivered";
-    }
+    const labels: Record<LocalOrder["status"], string> = {
+      PENDING: "Placed",
+      ACCEPTED: "Accepted",
+      PACKED: "Packed",
+      READY_FOR_PICKUP: "Ready for pickup",
+      DISPATCHED: "Dispatched",
+      PICKED_UP: "Picked up",
+      OUT_FOR_DELIVERY: "Out for delivery",
+      DELIVERED: "Delivered",
+    };
 
-    if (status === "Accepted") {
-      return "Confirmed";
-    }
-
-    return "Placed";
+    return labels[status];
   }
 
   function statusStyle(status: LocalOrder["status"]) {
-    if (status === "Delivered") {
+    if (status === "DELIVERED") {
       return { backgroundColor: "#2E7D32" };
     }
 
-    if (status === "Accepted") {
+    if (status === "OUT_FOR_DELIVERY" || status === "DISPATCHED") {
       return { backgroundColor: "#1565C0" };
+    }
+
+    if (status === "ACCEPTED" || status === "PACKED" || status === "READY_FOR_PICKUP" || status === "PICKED_UP") {
+      return { backgroundColor: "#6A1B9A" };
     }
 
     return { backgroundColor: "#6D4C41" };

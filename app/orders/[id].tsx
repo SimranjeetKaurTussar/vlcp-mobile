@@ -4,7 +4,17 @@ import { Alert, Animated, Pressable, ScrollView, Text, View } from "react-native
 import * as Notifications from "expo-notifications";
 import { useCart } from "../lib/cart";
 import { products } from "../lib/data";
-import { getOrders, getSellerProducts, type LocalOrder, type OrderStatus, updateOrderStatus } from "../lib/storage";
+import {
+  assignOrderDeliveryPartner,
+  getOrders,
+  getSellerProducts,
+  getStoredUserRole,
+  type LocalOrder,
+  type OrderStatus,
+  type UserRole,
+  updateOrderStatus,
+} from "../lib/storage";
+import { canAssignDeliveryPartner, canUpdateOrderStatus, getRoleAllowedStatuses } from "../lib/rbac";
 import { useTheme } from "../theme/ThemeProvider";
 
 export default function OrderDetail() {
@@ -14,12 +24,14 @@ export default function OrderDetail() {
   const { addItem, clearCart } = useCart();
   const [order, setOrder] = useState<LocalOrder | null>(null);
   const [toast, setToast] = useState("");
+  const [role, setRole] = useState<UserRole>("customer");
   const toastAnim = useRef(new Animated.Value(0)).current;
 
   useFocusEffect(
     useCallback(() => {
       async function loadOrder() {
         const all = await getOrders();
+        setRole(await getStoredUserRole());
         if (!orderId) {
           setOrder(null);
           return;
@@ -33,15 +45,18 @@ export default function OrderDetail() {
   );
 
   function statusLabel(status: OrderStatus) {
-    if (status === "Delivered") {
-      return "Delivered";
-    }
+    const labels: Record<OrderStatus, string> = {
+      PENDING: "Placed",
+      ACCEPTED: "Accepted",
+      PACKED: "Packed",
+      READY_FOR_PICKUP: "Ready for pickup",
+      DISPATCHED: "Dispatched",
+      PICKED_UP: "Picked up",
+      OUT_FOR_DELIVERY: "Out for delivery",
+      DELIVERED: "Delivered",
+    };
 
-    if (status === "Accepted") {
-      return "Confirmed";
-    }
-
-    return "Placed";
+    return labels[status];
   }
 
   function showToast(message: string) {
@@ -63,12 +78,40 @@ export default function OrderDetail() {
     }, 1200);
   }
 
+  async function handleAssignDeliveryPartner() {
+    if (!order || !canAssignDeliveryPartner(role)) {
+      return;
+    }
+
+    Alert.alert("Assign delivery partner", "Assign this order to delivery team?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Assign",
+        onPress: async () => {
+          await assignOrderDeliveryPartner(order.id, "Delivery Team");
+          const all = await getOrders();
+          setOrder(all.find((o) => o.id === order.id) ?? null);
+        },
+      },
+    ]);
+  }
+
   async function changeStatus(status: OrderStatus) {
     if (!order) {
       return;
     }
 
-    await updateOrderStatus(order.id, status);
+    if (!canUpdateOrderStatus(role, status)) {
+      Alert.alert("Permission denied", "Your role cannot update this status.");
+      return;
+    }
+
+    try {
+      await updateOrderStatus(order.id, status, role);
+    } catch {
+      Alert.alert("Permission denied", "Your role cannot update this status.");
+      return;
+    }
 
     const all = await getOrders();
     const next = all.find((o) => o.id === order.id) ?? null;
@@ -181,31 +224,53 @@ export default function OrderDetail() {
         </Text>
 
         <Text style={{ marginTop: 6, color: colors.mutedText }}>Status: {statusLabel(order.status)}</Text>
+        {order.assignedDeliveryPartner ? (
+          <Text style={{ marginTop: 4, color: colors.mutedText }}>Delivery partner: {order.assignedDeliveryPartner}</Text>
+        ) : null}
 
-        <View style={{ marginTop: 10, flexDirection: "row", gap: 8 }}>
-          {(["Pending", "Accepted", "Delivered"] as const).map((status) => {
-            const active = order.status === status;
+        {role !== "customer" ? (
+          <View style={{ marginTop: 10, flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+            {getRoleAllowedStatuses(role).map((status) => {
+              const active = order.status === status;
 
-            return (
-              <Pressable
-                key={statusLabel(status)}
-                onPress={() => changeStatus(status)}
-                style={{
-                  borderWidth: 1,
-                  borderColor: active ? colors.primary : colors.border,
-                  backgroundColor: active ? colors.primary : colors.surface,
-                  borderRadius: 999,
-                  paddingVertical: 8,
-                  paddingHorizontal: 12,
-                }}
-              >
-                <Text style={{ color: active ? colors.onPrimary : colors.text, fontWeight: "700" }}>
-                  {statusLabel(status)}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+              return (
+                <Pressable
+                  key={statusLabel(status)}
+                  onPress={() => changeStatus(status)}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: active ? colors.primary : colors.border,
+                    backgroundColor: active ? colors.primary : colors.surface,
+                    borderRadius: 999,
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                  }}
+                >
+                  <Text style={{ color: active ? colors.onPrimary : colors.text, fontWeight: "700" }}>
+                    {statusLabel(status)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
+
+        {canAssignDeliveryPartner(role) ? (
+          <Pressable
+            onPress={handleAssignDeliveryPartner}
+            style={{
+              marginTop: 10,
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderRadius: 10,
+              paddingVertical: 10,
+              alignItems: "center",
+              backgroundColor: colors.surface,
+            }}
+          >
+            <Text style={{ color: colors.text, fontWeight: "700" }}>Assign delivery partner</Text>
+          </Pressable>
+        ) : null}
 
         <View style={{ marginTop: 14, gap: 10 }}>
           {order.items.map((item) => (
