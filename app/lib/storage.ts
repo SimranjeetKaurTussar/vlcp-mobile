@@ -55,8 +55,22 @@ const SELLER_UPI_ID_KEY = "vlcp:sellerUpiId";
 const USER_ADDRESS_KEY = "vlcp:userAddress";
 const LANGUAGE_KEY = "vlcp:language";
 const USER_ROLE_KEY = "vlcp:userRole";
+const AUTH_TOKEN_KEY = "vlcp:authToken";
 export const SELLER_PRODUCTS_KEY = "seller_products";
 export const ORDERS_KEY = "orders_history";
+
+
+export async function getAuthToken() {
+  return (await AsyncStorage.getItem(AUTH_TOKEN_KEY)) ?? "";
+}
+
+export async function setAuthToken(token: string) {
+  await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
+}
+
+export async function clearAuthToken() {
+  await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
+}
 
 export async function getStoredThemeMode(): Promise<ThemeMode | null> {
   const value = await AsyncStorage.getItem(THEME_MODE_KEY);

@@ -1,28 +1,42 @@
-import { Tabs, useFocusEffect } from "expo-router";
+import { Tabs, router, useFocusEffect } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useCallback, useState } from "react";
 import { Text } from "react-native";
 import { useCart } from "../lib/cart";
-import { getStoredUserRole, type UserRole } from "../lib/storage";
+import { getAuthToken, getStoredUserRole, type UserRole } from "../lib/storage";
 import { useTheme } from "../theme/ThemeProvider";
 
 export default function TabsLayout() {
   const { items } = useCart();
   const { colors } = useTheme();
   const [role, setRole] = useState<UserRole>("customer");
+  const [authorized, setAuthorized] = useState(false);
   const count = items.reduce((sum, i) => sum + i.qty, 0);
 
   useFocusEffect(
     useCallback(() => {
-      async function loadRole() {
+      async function loadContext() {
+        const token = await getAuthToken();
+
+        if (!token) {
+          setAuthorized(false);
+          router.replace("/login");
+          return;
+        }
+
+        setAuthorized(true);
         setRole(await getStoredUserRole());
       }
 
-      loadRole();
+      loadContext();
     }, [])
   );
 
   const showSellerTab = role === "seller" || role === "admin";
+
+  if (!authorized) {
+    return null;
+  }
 
   return (
     <Tabs
