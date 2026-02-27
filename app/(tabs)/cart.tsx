@@ -90,6 +90,7 @@ export default function Cart() {
         qty: item.qty,
         price: item.price,
         unit: item.unit,
+        seller: item.seller,
       })),
       total: grandTotal,
       status: "Pending",

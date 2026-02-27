@@ -1,7 +1,8 @@
-import { router } from "expo-router";
-import { useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
-import { getSellerProducts, saveSellerProducts, type SellerProduct } from "../lib/storage";
+import { businessName, loadBusinessConfig } from "../lib/config";
+import { getSellerProducts, getStoredUserRole, saveSellerProducts, type SellerProduct, type UserRole } from "../lib/storage";
 import { useTheme } from "../theme/ThemeProvider";
 
 export default function AddProduct() {
@@ -12,6 +13,20 @@ export default function AddProduct() {
   const [unit, setUnit] = useState("unit");
   const [category, setCategory] = useState("");
   const [stock, setStock] = useState("");
+  const [role, setRole] = useState<UserRole>("customer");
+  const [sellerName, setSellerName] = useState("My Shop");
+
+  useFocusEffect(
+    useCallback(() => {
+      async function loadCtx() {
+        await loadBusinessConfig();
+        setRole(await getStoredUserRole());
+        setSellerName(businessName || "My Shop");
+      }
+
+      loadCtx();
+    }, [])
+  );
 
   async function saveProduct() {
     if (!name.trim() || !price.trim() || !category.trim() || !stock.trim()) {
@@ -32,7 +47,7 @@ export default function AddProduct() {
       name: name.trim(),
       price: numericPrice,
       unit: unit.trim() || "unit",
-      seller: "My Shop",
+      seller: sellerName,
       category: category.trim(),
       stock: numericStock,
     };
@@ -40,6 +55,14 @@ export default function AddProduct() {
     const existing = await getSellerProducts();
     await saveSellerProducts([newProduct, ...existing]);
     router.back();
+  }
+
+  if (role !== "seller" && role !== "admin") {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background }}>
+        <Text style={{ color: colors.text, fontWeight: "800" }}>Seller access only</Text>
+      </View>
+    );
   }
 
   return (

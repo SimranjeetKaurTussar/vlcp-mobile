@@ -33,6 +33,7 @@ export type LocalOrderItem = {
   qty: number;
   price: number;
   unit: string;
+  seller?: string;
 };
 
 export type LocalOrder = {
@@ -50,6 +51,7 @@ const BUSINESS_NAME_KEY = "vlcp:businessName";
 const WHATSAPP_NUMBER_KEY = "vlcp:whatsappNumber";
 const PLATFORM_UPI_ID_KEY = "vlcp:platformUpiId";
 const CUSTOMER_REFUND_UPI_ID_KEY = "vlcp:customerRefundUpiId";
+const SELLER_UPI_ID_KEY = "vlcp:sellerUpiId";
 const USER_ADDRESS_KEY = "vlcp:userAddress";
 const LANGUAGE_KEY = "vlcp:language";
 const USER_ROLE_KEY = "vlcp:userRole";
@@ -104,6 +106,15 @@ export async function getStoredCustomerRefundUpiId() {
 
 export async function setStoredCustomerRefundUpiId(upiId: string) {
   await AsyncStorage.setItem(CUSTOMER_REFUND_UPI_ID_KEY, upiId.trim());
+}
+
+
+export async function getStoredSellerUpiId() {
+  return (await AsyncStorage.getItem(SELLER_UPI_ID_KEY)) ?? "";
+}
+
+export async function setStoredSellerUpiId(upiId: string) {
+  await AsyncStorage.setItem(SELLER_UPI_ID_KEY, upiId.trim());
 }
 
 export async function setStoredAddress(address: string) {

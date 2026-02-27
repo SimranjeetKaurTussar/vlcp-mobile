@@ -49,6 +49,15 @@ export default function SellerDashboard() {
     ]);
   }
 
+
+  if (role !== "seller" && role !== "admin") {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background }}>
+        <Text style={{ color: colors.text, fontWeight: "800" }}>Seller access only</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
@@ -60,15 +69,23 @@ export default function SellerDashboard() {
           Seller Dashboard
         </Text>
 
-        <Pressable
-          onPress={() => {
-            if (role !== "seller" && role !== "admin") {
-              Alert.alert("Not allowed", "Only seller/admin can add products.");
-              return;
-            }
+        <View style={{ marginTop: 12, flexDirection: "row", gap: 10 }}>
+          <Pressable
+            onPress={() => router.push("/seller/orders")}
+            style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: colors.surface }}
+          >
+            <Text style={{ color: colors.text, fontWeight: "700" }}>Orders</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push("/seller/settings")}
+            style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: colors.surface }}
+          >
+            <Text style={{ color: colors.text, fontWeight: "700" }}>Payout Settings</Text>
+          </Pressable>
+        </View>
 
-            router.push("/seller/add-product");
-          }}
+        <Pressable
+          onPress={() => router.push("/seller/add-product")}
           style={{
             marginTop: 14,
             backgroundColor: colors.primary,
@@ -112,14 +129,7 @@ export default function SellerDashboard() {
 
               <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
                 <Pressable
-                  onPress={() => {
-                    if (role !== "seller" && role !== "admin") {
-                      Alert.alert("Not allowed", "Only seller/admin can edit products.");
-                      return;
-                    }
-
-                    router.push(`/seller/edit-product/${product.id}`);
-                  }}
+                  onPress={() => router.push(`/seller/edit-product/${product.id}`)}
                   style={{
                     borderWidth: 1,
                     borderColor: colors.border,
