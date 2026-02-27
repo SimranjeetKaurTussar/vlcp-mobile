@@ -45,25 +45,31 @@ model User {
   name        String
   phone       String?  @unique
   email       String?  @unique
+  passwordHash String?
   role        UserRole @default(customer)
   refundUpiId String?
   createdAt   DateTime @default(now())
 
-  sellerProfile Seller?
-  customerOrders Order[] @relation("CustomerOrders")
-  statusChanges  OrderStatusHistory[] @relation("StatusChangedBy")
+  sellerProfile   Seller?
+  customerOrders  Order[] @relation("CustomerOrders")
+  statusChanges   OrderStatusHistory[] @relation("StatusChangedBy")
+  sessions        AuthSession[]
+  otpRequests     OtpRequest[]
+  adminActions    AdminActionLog[] @relation("AdminActionBy")
 }
 
 model Seller {
-  id         String  @id @default(cuid())
-  userId     String  @unique
-  shopName   String
+  id          String  @id @default(cuid())
+  userId      String  @unique
+  shopName    String
   sellerUpiId String?
-  address    String
-  isVerified Boolean @default(false)
+  address     String
+  kycStatus   String  @default("PENDING")
+  isVerified  Boolean @default(false)
+  createdAt   DateTime @default(now())
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  products Product[]
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products   Product[]
   orderItems OrderItem[]
 }
 
@@ -83,9 +89,11 @@ model Product {
   images      Json
   categoryId  String
   isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  seller    Seller   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
-  category  Category @relation(fields: [categoryId], references: [id])
+  seller     Seller      @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  category   Category    @relation(fields: [categoryId], references: [id])
   orderItems OrderItem[]
 }
 
@@ -110,6 +118,7 @@ model Order {
   paymentStatus       PaymentStatus       @default(PENDING)
   paymentReceiverType PaymentReceiverType
   receiverUpiId       String?
+  paymentReference    String?
   addressId           String
   createdAt           DateTime            @default(now())
 
@@ -141,4 +150,38 @@ model OrderStatusHistory {
 
   order         Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
   changedByUser User  @relation("StatusChangedBy", fields: [changedByUserId], references: [id])
+}
+
+model AuthSession {
+  id           String   @id @default(cuid())
+  userId       String
+  refreshToken String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model OtpRequest {
+  id         String   @id @default(cuid())
+  userId     String
+  channel    String
+  otpHash    String
+  expiresAt  DateTime
+  verifiedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AdminActionLog {
+  id            String   @id @default(cuid())
+  adminUserId   String
+  action        String
+  entityType    String
+  entityId      String
+  payload       Json?
+  createdAt     DateTime @default(now())
+
+  adminUser User @relation("AdminActionBy", fields: [adminUserId], references: [id])
 }

@@ -1,16 +1,20 @@
+const jwt = require("jsonwebtoken");
+
 function authRequired(req, res, next) {
   const authHeader = req.headers.authorization || "";
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
 
-  // Demo token format: role:userId (e.g. seller:usr_123)
-  const [role, userId] = token.split(":");
-
-  if (!role || !userId) {
+  if (!token) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
-  req.user = { role, id: userId };
-  next();
+  try {
+    const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET || "dev_access_secret");
+    req.user = { id: payload.sub, role: payload.role };
+    return next();
+  } catch {
+    return res.status(401).json({ message: "Invalid token" });
+  }
 }
 
 function requireRoles(...roles) {
@@ -18,7 +22,7 @@ function requireRoles(...roles) {
     if (!req.user || !roles.includes(req.user.role)) {
       return res.status(403).json({ message: "Forbidden" });
     }
-    next();
+    return next();
   };
 }
 
