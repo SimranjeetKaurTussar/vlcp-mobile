@@ -52,31 +52,44 @@ export default function OrdersScreen() {
   }
 
   function statusLabel(status: LocalOrder["status"]) {
-    const labels: Record<LocalOrder["status"], string> = {
-      PENDING: "Placed",
-      ACCEPTED: "Accepted",
-      PACKED: "Packed",
-      READY_FOR_PICKUP: "Ready for pickup",
-      DISPATCHED: "Dispatched",
-      PICKED_UP: "Picked up",
-      OUT_FOR_DELIVERY: "Out for delivery",
-      DELIVERED: "Delivered",
-    };
+    if (status === "Delivered" || status === "DELIVERED") {
+      return "Delivered";
+    }
 
-    return labels[status];
+    if (status === "Accepted") {
+      return "Confirmed";
+    }
+
+    if (status === "PACKED") {
+      return "Packed";
+    }
+
+    if (status === "READY_FOR_PICKUP") {
+      return "Ready for pickup";
+    }
+
+    if (status === "DISPATCHED") {
+      return "Dispatched";
+    }
+
+    if (status === "PICKED_UP") {
+      return "Picked up";
+    }
+
+    if (status === "OUT_FOR_DELIVERY") {
+      return "Out for delivery";
+    }
+
+    return "Placed";
   }
 
   function statusStyle(status: LocalOrder["status"]) {
-    if (status === "DELIVERED") {
+    if (status === "Delivered") {
       return { backgroundColor: "#2E7D32" };
     }
 
-    if (status === "OUT_FOR_DELIVERY" || status === "DISPATCHED") {
+    if (status === "Accepted") {
       return { backgroundColor: "#1565C0" };
-    }
-
-    if (status === "ACCEPTED" || status === "PACKED" || status === "READY_FOR_PICKUP" || status === "PICKED_UP") {
-      return { backgroundColor: "#6A1B9A" };
     }
 
     return { backgroundColor: "#6D4C41" };

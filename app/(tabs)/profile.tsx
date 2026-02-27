@@ -17,8 +17,8 @@ import {
   setStoredAddress,
   setStoredUserRole,
   type AppLanguage,
-  type UserRole,
 } from "../lib/storage";
+import type { UserRole } from "../lib/storage";
 import { useT } from "../i18n/useT";
 
 export default function Profile() {

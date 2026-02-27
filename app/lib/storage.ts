@@ -1,5 +1,4 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { canUpdateOrderStatus } from "./rbac";
 
 export type ThemeMode = "light" | "dark" | "system";
 
@@ -14,17 +13,18 @@ export type SellerProduct = {
   images?: string[];
 };
 
-export type UserRole = "customer" | "seller" | "godown" | "delivery" | "admin";
-
 export type OrderStatus =
-  | "PENDING"
-  | "ACCEPTED"
+  | "Pending"
+  | "Accepted"
   | "PACKED"
   | "READY_FOR_PICKUP"
   | "DISPATCHED"
   | "PICKED_UP"
   | "OUT_FOR_DELIVERY"
+  | "Delivered"
   | "DELIVERED";
+
+export type UserRole = "customer" | "seller" | "godown" | "delivery" | "admin";
 
 export type LocalOrderItem = {
   id: string;
@@ -40,7 +40,6 @@ export type LocalOrder = {
   items: LocalOrderItem[];
   total: number;
   status: OrderStatus;
-  assignedDeliveryPartner?: string;
 };
 
 const THEME_MODE_KEY = "vlcp:themeMode";
@@ -165,22 +164,7 @@ export async function getOrders(): Promise<LocalOrder[]> {
 
   try {
     const parsed = JSON.parse(raw) as LocalOrder[];
-
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed.map((order) => ({
-      ...order,
-      status:
-        (order as { status: string }).status === "Pending"
-          ? "PENDING"
-          : (order as { status: string }).status === "Accepted"
-            ? "ACCEPTED"
-            : (order as { status: string }).status === "Delivered"
-              ? "DELIVERED"
-              : order.status,
-    }));
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
@@ -191,23 +175,10 @@ export async function saveOrder(order: LocalOrder) {
   await AsyncStorage.setItem(ORDERS_KEY, JSON.stringify([order, ...existing]));
 }
 
-export async function updateOrderStatus(id: string, status: OrderStatus, role: UserRole = "admin") {
-  if (!canUpdateOrderStatus(role, status)) {
-    throw new Error("ROLE_NOT_ALLOWED");
-  }
-
+export async function updateOrderStatus(id: string, status: OrderStatus) {
   const existing = await getOrders();
   const updated = existing.map((order) =>
     order.id === id ? { ...order, status } : order
-  );
-
-  await AsyncStorage.setItem(ORDERS_KEY, JSON.stringify(updated));
-}
-
-export async function assignOrderDeliveryPartner(id: string, partnerName: string) {
-  const existing = await getOrders();
-  const updated = existing.map((order) =>
-    order.id === id ? { ...order, assignedDeliveryPartner: partnerName.trim() } : order
   );
 
   await AsyncStorage.setItem(ORDERS_KEY, JSON.stringify(updated));

@@ -1,16 +1,27 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
-import { getSellerProducts, saveSellerProducts, type SellerProduct } from "../lib/storage";
+import {
+  getSellerProducts,
+  getStoredUserRole,
+  saveSellerProducts,
+  type SellerProduct,
+} from "../lib/storage";
+import type { UserRole } from "../lib/storage";
 import { useTheme } from "../theme/ThemeProvider";
 
 export default function SellerDashboard() {
   const { colors } = useTheme();
   const [products, setProducts] = useState<SellerProduct[]>([]);
+  const [role, setRole] = useState<UserRole>("customer");
 
   async function loadProducts() {
-    const stored = await getSellerProducts();
+    const [stored, currentRole] = await Promise.all([
+      getSellerProducts(),
+      getStoredUserRole(),
+    ]);
     setProducts(stored);
+    setRole(currentRole);
   }
 
   useFocusEffect(
@@ -20,6 +31,10 @@ export default function SellerDashboard() {
   );
 
   function confirmDelete(id: string) {
+    if (role !== "seller" && role !== "admin") {
+      Alert.alert("Not allowed", "Only seller/admin can manage products.");
+      return;
+    }
     Alert.alert("Delete product", "Are you sure you want to delete this product?", [
       { text: "Cancel", style: "cancel" },
       {
@@ -46,7 +61,14 @@ export default function SellerDashboard() {
         </Text>
 
         <Pressable
-          onPress={() => router.push("/seller/add-product")}
+          onPress={() => {
+            if (role !== "seller" && role !== "admin") {
+              Alert.alert("Not allowed", "Only seller/admin can add products.");
+              return;
+            }
+
+            router.push("/seller/add-product");
+          }}
           style={{
             marginTop: 14,
             backgroundColor: colors.primary,
@@ -90,7 +112,14 @@ export default function SellerDashboard() {
 
               <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
                 <Pressable
-                  onPress={() => router.push(`/seller/edit-product/${product.id}`)}
+                  onPress={() => {
+                    if (role !== "seller" && role !== "admin") {
+                      Alert.alert("Not allowed", "Only seller/admin can edit products.");
+                      return;
+                    }
+
+                    router.push(`/seller/edit-product/${product.id}`);
+                  }}
                   style={{
                     borderWidth: 1,
                     borderColor: colors.border,

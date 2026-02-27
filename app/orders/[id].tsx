@@ -5,16 +5,15 @@ import * as Notifications from "expo-notifications";
 import { useCart } from "../lib/cart";
 import { products } from "../lib/data";
 import {
-  assignOrderDeliveryPartner,
   getOrders,
   getSellerProducts,
   getStoredUserRole,
   type LocalOrder,
   type OrderStatus,
-  type UserRole,
   updateOrderStatus,
 } from "../lib/storage";
-import { canAssignDeliveryPartner, canUpdateOrderStatus, getRoleAllowedStatuses } from "../lib/rbac";
+import { canUpdateOrderStatus, normalizeDelivered } from "../lib/rbac";
+import type { UserRole } from "../lib/storage";
 import { useTheme } from "../theme/ThemeProvider";
 
 export default function OrderDetail() {
@@ -30,8 +29,8 @@ export default function OrderDetail() {
   useFocusEffect(
     useCallback(() => {
       async function loadOrder() {
-        const all = await getOrders();
-        setRole(await getStoredUserRole());
+        const [all, currentRole] = await Promise.all([getOrders(), getStoredUserRole()]);
+        setRole(currentRole);
         if (!orderId) {
           setOrder(null);
           return;
@@ -45,18 +44,35 @@ export default function OrderDetail() {
   );
 
   function statusLabel(status: OrderStatus) {
-    const labels: Record<OrderStatus, string> = {
-      PENDING: "Placed",
-      ACCEPTED: "Accepted",
-      PACKED: "Packed",
-      READY_FOR_PICKUP: "Ready for pickup",
-      DISPATCHED: "Dispatched",
-      PICKED_UP: "Picked up",
-      OUT_FOR_DELIVERY: "Out for delivery",
-      DELIVERED: "Delivered",
-    };
+    if (status === "Delivered") {
+      return "Delivered";
+    }
 
-    return labels[status];
+    if (status === "Accepted") {
+      return "Confirmed";
+    }
+
+    if (status === "PACKED") {
+      return "Packed";
+    }
+
+    if (status === "READY_FOR_PICKUP") {
+      return "Ready for pickup";
+    }
+
+    if (status === "DISPATCHED") {
+      return "Dispatched";
+    }
+
+    if (status === "PICKED_UP") {
+      return "Picked up";
+    }
+
+    if (status === "OUT_FOR_DELIVERY") {
+      return "Out for delivery";
+    }
+
+    return "Placed";
   }
 
   function showToast(message: string) {
@@ -78,40 +94,21 @@ export default function OrderDetail() {
     }, 1200);
   }
 
-  async function handleAssignDeliveryPartner() {
-    if (!order || !canAssignDeliveryPartner(role)) {
-      return;
-    }
-
-    Alert.alert("Assign delivery partner", "Assign this order to delivery team?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Assign",
-        onPress: async () => {
-          await assignOrderDeliveryPartner(order.id, "Delivery Team");
-          const all = await getOrders();
-          setOrder(all.find((o) => o.id === order.id) ?? null);
-        },
-      },
-    ]);
-  }
-
   async function changeStatus(status: OrderStatus) {
     if (!order) {
       return;
     }
 
     if (!canUpdateOrderStatus(role, status)) {
-      Alert.alert("Permission denied", "Your role cannot update this status.");
+      Alert.alert("Not allowed", "Your role cannot update to this status.");
       return;
     }
 
-    try {
-      await updateOrderStatus(order.id, status, role);
-    } catch {
-      Alert.alert("Permission denied", "Your role cannot update this status.");
+    if (role === "customer") {
       return;
     }
+
+    await updateOrderStatus(order.id, status);
 
     const all = await getOrders();
     const next = all.find((o) => o.id === order.id) ?? null;
@@ -223,54 +220,44 @@ export default function OrderDetail() {
           {new Date(order.createdAt).toLocaleString()}
         </Text>
 
-        <Text style={{ marginTop: 6, color: colors.mutedText }}>Status: {statusLabel(order.status)}</Text>
-        {order.assignedDeliveryPartner ? (
-          <Text style={{ marginTop: 4, color: colors.mutedText }}>Delivery partner: {order.assignedDeliveryPartner}</Text>
-        ) : null}
+        <Text style={{ marginTop: 6, color: colors.mutedText }}>Status: {statusLabel(normalizeDelivered(order.status))}</Text>
 
-        {role !== "customer" ? (
+        {role === "customer" ? null : (
           <View style={{ marginTop: 10, flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-            {getRoleAllowedStatuses(role).map((status) => {
-              const active = order.status === status;
+            {([
+              "Accepted",
+              "PACKED",
+              "READY_FOR_PICKUP",
+              "DISPATCHED",
+              "PICKED_UP",
+              "OUT_FOR_DELIVERY",
+              "Delivered",
+            ] as const)
+              .filter((status) => canUpdateOrderStatus(role, status))
+              .map((status) => {
+                const active = normalizeDelivered(order.status) === status;
 
-              return (
-                <Pressable
-                  key={statusLabel(status)}
-                  onPress={() => changeStatus(status)}
-                  style={{
-                    borderWidth: 1,
-                    borderColor: active ? colors.primary : colors.border,
-                    backgroundColor: active ? colors.primary : colors.surface,
-                    borderRadius: 999,
-                    paddingVertical: 8,
-                    paddingHorizontal: 12,
-                  }}
-                >
-                  <Text style={{ color: active ? colors.onPrimary : colors.text, fontWeight: "700" }}>
-                    {statusLabel(status)}
-                  </Text>
-                </Pressable>
-              );
-            })}
+                return (
+                  <Pressable
+                    key={status}
+                    onPress={() => changeStatus(status)}
+                    style={{
+                      borderWidth: 1,
+                      borderColor: active ? colors.primary : colors.border,
+                      backgroundColor: active ? colors.primary : colors.surface,
+                      borderRadius: 999,
+                      paddingVertical: 8,
+                      paddingHorizontal: 12,
+                    }}
+                  >
+                    <Text style={{ color: active ? colors.onPrimary : colors.text, fontWeight: "700" }}>
+                      {statusLabel(status)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
           </View>
-        ) : null}
-
-        {canAssignDeliveryPartner(role) ? (
-          <Pressable
-            onPress={handleAssignDeliveryPartner}
-            style={{
-              marginTop: 10,
-              borderWidth: 1,
-              borderColor: colors.border,
-              borderRadius: 10,
-              paddingVertical: 10,
-              alignItems: "center",
-              backgroundColor: colors.surface,
-            }}
-          >
-            <Text style={{ color: colors.text, fontWeight: "700" }}>Assign delivery partner</Text>
-          </Pressable>
-        ) : null}
+        )}
 
         <View style={{ marginTop: 14, gap: 10 }}>
           {order.items.map((item) => (

@@ -1,30 +1,34 @@
 import type { OrderStatus, UserRole } from "./storage";
 
-const ROLE_STATUS_PERMISSIONS: Record<UserRole, OrderStatus[]> = {
+const statusProgression: OrderStatus[] = [
+  "Pending",
+  "Accepted",
+  "PACKED",
+  "READY_FOR_PICKUP",
+  "DISPATCHED",
+  "PICKED_UP",
+  "OUT_FOR_DELIVERY",
+  "Delivered",
+  "DELIVERED",
+];
+
+const roleAllowedTargets: Record<UserRole, OrderStatus[]> = {
   customer: [],
-  seller: ["ACCEPTED", "PACKED", "READY_FOR_PICKUP"],
+  seller: ["Accepted", "PACKED", "READY_FOR_PICKUP"],
   godown: ["DISPATCHED"],
-  delivery: ["PICKED_UP", "OUT_FOR_DELIVERY", "DELIVERED"],
-  admin: [
-    "PENDING",
-    "ACCEPTED",
-    "PACKED",
-    "READY_FOR_PICKUP",
-    "DISPATCHED",
-    "PICKED_UP",
-    "OUT_FOR_DELIVERY",
-    "DELIVERED",
-  ],
+  delivery: ["PICKED_UP", "OUT_FOR_DELIVERY", "Delivered", "DELIVERED"],
+  admin: statusProgression,
 };
 
-export function canUpdateOrderStatus(role: UserRole, status: OrderStatus) {
-  return ROLE_STATUS_PERMISSIONS[role].includes(status);
+export function normalizeDelivered(status: OrderStatus): OrderStatus {
+  if (status === "DELIVERED") {
+    return "Delivered";
+  }
+
+  return status;
 }
 
-export function getRoleAllowedStatuses(role: UserRole) {
-  return ROLE_STATUS_PERMISSIONS[role];
+export function canUpdateOrderStatus(role: UserRole, target: OrderStatus) {
+  return roleAllowedTargets[role].includes(target);
 }
 
-export function canAssignDeliveryPartner(role: UserRole) {
-  return role === "godown" || role === "admin";
-}
