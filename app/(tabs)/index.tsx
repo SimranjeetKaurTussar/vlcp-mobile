@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,19 +6,31 @@ import {
   ScrollView,
   Pressable,
   Animated,
+  Image,
+  FlatList,
 } from "react-native";
-import { categories, products } from "../lib/data";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { categories, productImagePlaceholder, products } from "../lib/data";
 import { useCart } from "../lib/cart";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
+import { useTheme } from "../theme/ThemeProvider";
+import { getSellerProducts, type SellerProduct } from "../lib/storage";
+import { useT } from "../i18n/useT";
 
 export default function Home() {
-  const { addItem } = useCart();
+  const { items, addItem, decItem } = useCart();
+  const { colors, spacing, radius, fontSizes, shadows } = useTheme();
+  const { t } = useT();
 
   const [query, setQuery] = useState("");
   const [activeCat, setActiveCat] = useState<string>("All");
+  const [sellerProducts, setSellerProducts] = useState<SellerProduct[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
 
   const [toast, setToast] = useState<string>("");
   const toastAnim = useRef(new Animated.Value(0)).current;
+  const cardPressAnim = useRef(new Animated.Value(1)).current;
+  const [pressedCardId, setPressedCardId] = useState<string | null>(null);
 
   function showToast(message: string) {
     setToast(message);
@@ -39,9 +51,43 @@ export default function Home() {
     }, 1200);
   }
 
+  function onCardPressIn(id: string) {
+    setPressedCardId(id);
+    Animated.spring(cardPressAnim, {
+      toValue: 0.98,
+      useNativeDriver: true,
+      speed: 25,
+      bounciness: 4,
+    }).start();
+  }
+
+  function onCardPressOut() {
+    Animated.spring(cardPressAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 25,
+      bounciness: 4,
+    }).start(() => setPressedCardId(null));
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      async function loadSellerProducts() {
+        setIsLoadingProducts(true);
+        const stored = await getSellerProducts();
+        setSellerProducts(stored);
+        setIsLoadingProducts(false);
+      }
+
+      loadSellerProducts();
+    }, [])
+  );
+
+  const allProducts = useMemo(() => [...products, ...sellerProducts], [sellerProducts]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return products.filter((p) => {
+    return allProducts.filter((p) => {
       const matchesQuery =
         q.length === 0 ||
         p.name.toLowerCase().includes(q) ||
@@ -50,129 +96,278 @@ export default function Home() {
       const matchesCat = activeCat === "All" || p.category === activeCat;
       return matchesQuery && matchesCat;
     });
-  }, [query, activeCat]);
+  }, [query, activeCat, allProducts]);
+
+  const categoryScopedProducts = useMemo(
+    () => allProducts.filter((p) => activeCat === "All" || p.category === activeCat),
+    [activeCat, allProducts]
+  );
+
+  const todaysPick = useMemo(() => categoryScopedProducts.slice(0, 2), [categoryScopedProducts]);
+  const newArrivals = useMemo(
+    () => [...categoryScopedProducts].slice(-8).reverse(),
+    [categoryScopedProducts]
+  );
 
   return (
-    <View style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 90 }}>
-        <Text style={{ fontSize: 26, fontWeight: "800" }}>VLCP</Text>
-        <Text style={{ marginTop: 6, opacity: 0.7 }}>
-          Organic & handmade products from your village
-        </Text>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <FlatList
+        data={isLoadingProducts ? [] : filtered}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ padding: spacing.lg, paddingBottom: 90 }}
+        renderItem={({ item: p }) => {
+          const cartItem = items.find((i) => i.id === p.id);
+          const qty = cartItem?.qty ?? 0;
 
-        {/* Search */}
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Search products or sellers..."
-          style={{
-            marginTop: 14,
-            borderWidth: 1,
-            borderColor: "#e5e5e5",
-            borderRadius: 14,
-            padding: 12,
-            fontSize: 16,
-            backgroundColor: "white",
-          }}
-        />
-
-        {/* Categories */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ marginTop: 14 }}
-        >
-          {["All", ...categories.map((c) => c.name)].map((name) => {
-            const active = name === activeCat;
-            return (
-              <Pressable
-                key={name}
-                onPress={() => setActiveCat(name)}
-                style={{
-                  paddingVertical: 10,
-                  paddingHorizontal: 14,
-                  borderRadius: 999,
-                  marginRight: 10,
-                  borderWidth: 1,
-                  borderColor: active ? "black" : "#e5e5e5",
-                  backgroundColor: active ? "black" : "white",
-                }}
-              >
-                <Text
-                  style={{
-                    color: active ? "white" : "black",
-                    fontWeight: "700",
-                  }}
-                >
-                  {name}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-
-        {/* Products */}
-        <Text style={{ marginTop: 18, fontSize: 18, fontWeight: "800" }}>
-          Products
-        </Text>
-
-        <View style={{ marginTop: 10, gap: 12 }}>
-          {filtered.map((p) => (
-            <Pressable
-              key={p.id}
-              onPress={() => router.push(`/product/${p.id}`)}
+          return (
+            <Animated.View
               style={{
-                borderWidth: 1,
-                borderColor: "#eee",
-                borderRadius: 16,
-                padding: 14,
-                backgroundColor: "white",
+                marginBottom: spacing.sm,
+                transform: [{ scale: pressedCardId === p.id ? cardPressAnim : 1 }],
               }}
             >
-              <Text style={{ fontSize: 16, fontWeight: "800" }}>{p.name}</Text>
-              <Text style={{ marginTop: 4, opacity: 0.7 }}>
-                Seller: {p.seller} • {p.category}
-              </Text>
-
-              <View
-                style={{
-                  marginTop: 10,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
+              <Pressable
+                onPress={() => router.push(`/product/${p.id}`)}
+                onPressIn={() => onCardPressIn(p.id)}
+                onPressOut={onCardPressOut}
+                style={({ pressed }) => ({
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  borderRadius: radius.lg,
+                  padding: spacing.md,
+                  backgroundColor: colors.surface,
+                  opacity: pressed ? 0.95 : 1,
+                  ...shadows.card,
+                })}
               >
-                <Text style={{ fontSize: 16, fontWeight: "800" }}>
-                  ₹{p.price} / {p.unit}
+                <Image
+                  source={{ uri: p.images?.[0] ?? productImagePlaceholder }}
+                  style={{ width: "100%", height: 140, borderRadius: radius.md, backgroundColor: colors.background }}
+                  resizeMode="cover"
+                />
+
+                <Text style={{ marginTop: 10, fontSize: 16, fontWeight: "800", color: colors.text }}>
+                  {p.name}
+                </Text>
+                <Text style={{ marginTop: 4, color: colors.mutedText }}>
+                  Seller: {p.seller} • {p.category}
                 </Text>
 
-                <Pressable
-                  style={{
-                    backgroundColor: "black",
-                    paddingVertical: 10,
-                    paddingHorizontal: 14,
-                    borderRadius: 12,
-                  }}
-                  onPress={() => {
-                    addItem(p);
-                    showToast("Added to cart ✅");
-                  }}
-                >
-                  <Text style={{ color: "white", fontWeight: "800" }}>Add</Text>
-                </Pressable>
-              </View>
-            </Pressable>
-          ))}
+                <View style={{ marginTop: spacing.sm, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                  <View>
+                    <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>
+                      ₹{p.price} / {p.unit}
+                    </Text>
+                    {qty > 0 ? (
+                      <Text style={{ marginTop: 4, color: colors.mutedText, fontSize: 13 }}>In cart: {qty}</Text>
+                    ) : null}
+                  </View>
 
-          {filtered.length === 0 ? (
-            <Text style={{ marginTop: 10, opacity: 0.7 }}>
-              No products found.
+                  {qty === 0 ? (
+                    <Pressable
+                      style={({ pressed }) => ({
+                        backgroundColor: colors.primary,
+                        paddingVertical: 10,
+                        paddingHorizontal: 14,
+                        borderRadius: radius.md,
+                        opacity: pressed ? 0.9 : 1,
+                      })}
+                      onPress={(event) => {
+                        event.stopPropagation();
+                        addItem(p);
+                        showToast("Added to cart ✅");
+                      }}
+                    >
+                      <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>{t("add_to_cart")}</Text>
+                    </Pressable>
+                  ) : (
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                      <Pressable
+                        onPress={(event) => {
+                          event.stopPropagation();
+                          decItem(p.id);
+                        }}
+                        style={{ backgroundColor: colors.primary, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.sm }}
+                      >
+                        <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>−</Text>
+                      </Pressable>
+                      <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>{qty}</Text>
+                      <Pressable
+                        onPress={(event) => {
+                          event.stopPropagation();
+                          addItem(p);
+                        }}
+                        style={{ backgroundColor: colors.primary, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.sm }}
+                      >
+                        <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>+</Text>
+                      </Pressable>
+                    </View>
+                  )}
+                </View>
+              </Pressable>
+            </Animated.View>
+          );
+        }}
+        ListHeaderComponent={
+          <>
+            <Text style={{ fontSize: fontSizes.title, fontWeight: "800", color: colors.text }}>
+              {t("home_title")}
             </Text>
-          ) : null}
-        </View>
-      </ScrollView>
+            <Text style={{ marginTop: 6, color: colors.mutedText }}>Organic & handmade products from your village</Text>
 
-      {/* ✅ Toast overlay OUTSIDE ScrollView */}
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder={t("search_placeholder")}
+              style={{
+                marginTop: spacing.md,
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: radius.md,
+                padding: spacing.sm,
+                fontSize: 16,
+                backgroundColor: colors.surface,
+              }}
+            />
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: spacing.md }}>
+              {["All", ...categories.map((c) => c.name)].map((name) => {
+                const active = name === activeCat;
+                return (
+                  <Pressable
+                    key={name}
+                    onPress={() => setActiveCat(name)}
+                    style={({ pressed }) => ({
+                      paddingVertical: 10,
+                      paddingHorizontal: 14,
+                      borderRadius: radius.pill,
+                      marginRight: 10,
+                      borderWidth: 1,
+                      borderColor: active ? colors.primary : colors.border,
+                      backgroundColor: active ? colors.primary : colors.surface,
+                      opacity: pressed ? 0.9 : 1,
+                    })}
+                  >
+                    <Text style={{ color: active ? colors.onPrimary : colors.text, fontWeight: "700" }}>{name}</Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
+            <Pressable onPress={() => router.push("/(tabs)/categories")} style={{ marginTop: spacing.sm }}>
+              <Text style={{ color: colors.primary, fontWeight: "700" }}>View all categories</Text>
+            </Pressable>
+
+            {!isLoadingProducts && query.trim().length === 0 ? (
+              <>
+                <Text style={{ marginTop: spacing.lg, fontSize: fontSizes.subtitle, fontWeight: "800", color: colors.text }}>
+                  Today&apos;s Pick
+                </Text>
+                <View style={{ marginTop: spacing.sm, gap: spacing.sm }}>
+                  {todaysPick.map((p) => (
+                    <Pressable
+                      key={`pick_${p.id}`}
+                      onPress={() => router.push(`/product/${p.id}`)}
+                      style={({ pressed }) => ({
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                        borderRadius: radius.lg,
+                        padding: spacing.md,
+                        backgroundColor: colors.surface,
+                        opacity: pressed ? 0.95 : 1,
+                        ...shadows.card,
+                      })}
+                    >
+                      <Text style={{ color: colors.text, fontWeight: "800" }}>{p.name}</Text>
+                      <Text style={{ marginTop: 4, color: colors.mutedText }}>
+                        {p.seller} • ₹{p.price}/{p.unit}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+
+                <Text style={{ marginTop: spacing.lg, fontSize: fontSizes.subtitle, fontWeight: "800", color: colors.text }}>
+                  New Arrivals
+                </Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: spacing.sm }}>
+                  {newArrivals.map((p) => (
+                    <Pressable
+                      key={`new_${p.id}`}
+                      onPress={() => router.push(`/product/${p.id}`)}
+                      style={({ pressed }) => ({
+                        width: 180,
+                        marginRight: spacing.sm,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                        borderRadius: radius.lg,
+                        padding: spacing.sm,
+                        backgroundColor: colors.surface,
+                        opacity: pressed ? 0.95 : 1,
+                        ...shadows.card,
+                      })}
+                    >
+                      <Image
+                        source={{ uri: p.images?.[0] ?? productImagePlaceholder }}
+                        style={{ width: "100%", height: 90, borderRadius: radius.md, backgroundColor: colors.background }}
+                        resizeMode="cover"
+                      />
+                      <Text numberOfLines={1} style={{ marginTop: 8, fontWeight: "800", color: colors.text }}>
+                        {p.name}
+                      </Text>
+                      <Text style={{ marginTop: 2, color: colors.mutedText, fontSize: 12 }}>₹{p.price}</Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </>
+            ) : null}
+
+            <Text style={{ marginTop: spacing.lg, marginBottom: spacing.sm, fontSize: fontSizes.subtitle, fontWeight: "800", color: colors.text }}>
+              Products
+            </Text>
+
+            {isLoadingProducts
+              ? [1, 2].map((key) => (
+                  <View
+                    key={`skeleton_${key}`}
+                    style={{
+                      marginBottom: spacing.sm,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      borderRadius: radius.lg,
+                      padding: spacing.md,
+                      backgroundColor: colors.surface,
+                    }}
+                  >
+                    <View style={{ height: 140, borderRadius: radius.md, backgroundColor: colors.background }} />
+                    <View style={{ marginTop: 10, height: 14, borderRadius: 8, backgroundColor: colors.background }} />
+                    <View style={{ marginTop: 8, height: 12, borderRadius: 8, backgroundColor: colors.background }} />
+                  </View>
+                ))
+              : null}
+          </>
+        }
+        ListEmptyComponent={
+          !isLoadingProducts ? (
+            <View
+              style={{
+                marginTop: spacing.sm,
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: radius.lg,
+                padding: spacing.lg,
+                backgroundColor: colors.surface,
+                alignItems: "center",
+                ...shadows.card,
+              }}
+            >
+              <Ionicons name="search-outline" size={28} color={colors.mutedText} />
+              <Text style={{ marginTop: 10, color: colors.text, fontWeight: "800" }}>No results found</Text>
+              <Text style={{ marginTop: 4, color: colors.mutedText }}>Try another search</Text>
+            </View>
+          ) : null
+        }
+      />
+
       {toast ? (
         <Animated.View
           pointerEvents="none"
@@ -194,14 +389,14 @@ export default function Home() {
         >
           <View
             style={{
-              backgroundColor: "black",
+              backgroundColor: colors.primary,
               paddingVertical: 12,
               paddingHorizontal: 14,
-              borderRadius: 14,
+              borderRadius: radius.md,
               alignItems: "center",
             }}
           >
-            <Text style={{ color: "white", fontWeight: "800" }}>{toast}</Text>
+            <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>{toast}</Text>
           </View>
         </Animated.View>
       ) : null}
