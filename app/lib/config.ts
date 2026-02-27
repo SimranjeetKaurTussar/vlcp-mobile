@@ -1,20 +1,20 @@
 import {
   getStoredBusinessName,
+  getStoredPlatformUpiId,
   getStoredWhatsAppNumber,
-  getStoredUpiId,
   setStoredBusinessName,
-  setStoredUpiId,
+  setStoredPlatformUpiId,
   setStoredWhatsAppNumber,
 } from "./storage";
 
 export let whatsappNumber = "91XXXXXXXXXX";
 export let businessName = "VLCP";
-export let upiId = "";
+export let platformUpiId = "";
 
 export async function loadBusinessConfig() {
   businessName = await getStoredBusinessName();
   whatsappNumber = await getStoredWhatsAppNumber();
-  upiId = await getStoredUpiId();
+  platformUpiId = await getStoredPlatformUpiId();
 }
 
 export async function updateBusinessName(name: string) {
@@ -28,8 +28,7 @@ export async function updateWhatsAppNumber(number: string) {
   await setStoredWhatsAppNumber(number);
 }
 
-
-export async function updateUpiId(nextUpiId: string) {
-  upiId = nextUpiId.trim();
-  await setStoredUpiId(upiId);
+export async function updatePlatformUpiId(nextUpiId: string) {
+  platformUpiId = nextUpiId.trim();
+  await setStoredPlatformUpiId(platformUpiId);
 }

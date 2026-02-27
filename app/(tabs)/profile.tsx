@@ -6,15 +6,17 @@ import {
   businessName,
   loadBusinessConfig,
   updateBusinessName,
-  updateUpiId,
+  updatePlatformUpiId,
   updateWhatsAppNumber,
-  upiId,
+  platformUpiId,
   whatsappNumber,
 } from "../lib/config";
 import {
   getStoredAddress,
+  getStoredCustomerRefundUpiId,
   getStoredUserRole,
   setStoredAddress,
+  setStoredCustomerRefundUpiId,
   setStoredUserRole,
   type AppLanguage,
 } from "../lib/storage";
@@ -27,7 +29,8 @@ export default function Profile() {
   const [name, setName] = useState(businessName);
   const [number, setNumber] = useState(whatsappNumber);
   const [address, setAddress] = useState("");
-  const [upi, setUpi] = useState(upiId);
+  const [platformReceiverUpi, setPlatformReceiverUpi] = useState(platformUpiId);
+  const [refundUpi, setRefundUpi] = useState("");
   const [role, setRole] = useState<UserRole>("customer");
 
   useEffect(() => {
@@ -35,8 +38,9 @@ export default function Profile() {
       await loadBusinessConfig();
       setName(businessName);
       setNumber(whatsappNumber);
-      setUpi(upiId);
+      setPlatformReceiverUpi(platformUpiId);
       setAddress(await getStoredAddress());
+      setRefundUpi(await getStoredCustomerRefundUpiId());
       setRole(await getStoredUserRole());
     }
 
@@ -48,13 +52,15 @@ export default function Profile() {
 
     await updateBusinessName(name);
     await updateWhatsAppNumber(cleanNumber);
-    await updateUpiId(upi);
+    await updatePlatformUpiId(platformReceiverUpi);
     await setStoredAddress(address);
+    await setStoredCustomerRefundUpiId(refundUpi);
     await setStoredUserRole(role);
 
     setName(name.trim() || "VLCP");
     setNumber(cleanNumber);
-    setUpi(upi.trim());
+    setPlatformReceiverUpi(platformReceiverUpi.trim());
+    setRefundUpi(refundUpi.trim());
     setAddress(address.trim());
     Alert.alert("Saved", "Profile and business settings updated.");
   }
@@ -183,11 +189,11 @@ export default function Profile() {
         Digits only (country code + number), e.g. 919876543210
       </Text>
 
-      <Text style={{ marginTop: 14, color: colors.text, fontWeight: "600" }}>UPI ID</Text>
+      <Text style={{ marginTop: 14, color: colors.text, fontWeight: "600" }}>Payment Receiver UPI (Seller/Platform)</Text>
       <TextInput
-        value={upi}
-        onChangeText={setUpi}
-        placeholder="example@upi"
+        value={platformReceiverUpi}
+        onChangeText={setPlatformReceiverUpi}
+        placeholder="receiver@upi"
         autoCapitalize="none"
         autoCorrect={false}
         style={{
@@ -200,7 +206,26 @@ export default function Profile() {
           color: colors.text,
         }}
       />
+      <Text style={{ marginTop: 6, color: colors.mutedText, fontSize: 12 }}>Used for collecting checkout payments.</Text>
 
+      <Text style={{ marginTop: 14, color: colors.text, fontWeight: "600" }}>Customer Refund UPI (optional)</Text>
+      <TextInput
+        value={refundUpi}
+        onChangeText={setRefundUpi}
+        placeholder="refund@upi"
+        autoCapitalize="none"
+        autoCorrect={false}
+        style={{
+          marginTop: 8,
+          borderWidth: 1,
+          borderColor: colors.border,
+          borderRadius: radius.md,
+          padding: spacing.sm,
+          backgroundColor: colors.surface,
+          color: colors.text,
+        }}
+      />
+      <Text style={{ marginTop: 6, color: colors.mutedText, fontSize: 12 }}>Only for refunds to this customer profile, not payment receiving.</Text>
 
       <Text style={{ marginTop: 20, color: colors.mutedText, fontWeight: "600" }}>Role</Text>
       <View style={{ flexDirection: "row", marginTop: 10, gap: 10, flexWrap: "wrap" }}>

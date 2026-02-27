@@ -25,6 +25,7 @@ export type OrderStatus =
   | "DELIVERED";
 
 export type UserRole = "customer" | "seller" | "godown" | "delivery" | "admin";
+export type PaymentReceiverType = "platform" | "godown" | "seller";
 
 export type LocalOrderItem = {
   id: string;
@@ -40,12 +41,15 @@ export type LocalOrder = {
   items: LocalOrderItem[];
   total: number;
   status: OrderStatus;
+  paymentReceiverType: PaymentReceiverType;
+  receiverUpiId: string;
 };
 
 const THEME_MODE_KEY = "vlcp:themeMode";
 const BUSINESS_NAME_KEY = "vlcp:businessName";
 const WHATSAPP_NUMBER_KEY = "vlcp:whatsappNumber";
-const UPI_ID_KEY = "vlcp:upiId";
+const PLATFORM_UPI_ID_KEY = "vlcp:platformUpiId";
+const CUSTOMER_REFUND_UPI_ID_KEY = "vlcp:customerRefundUpiId";
 const USER_ADDRESS_KEY = "vlcp:userAddress";
 const LANGUAGE_KEY = "vlcp:language";
 const USER_ROLE_KEY = "vlcp:userRole";
@@ -86,18 +90,25 @@ export async function getStoredAddress() {
   return (await AsyncStorage.getItem(USER_ADDRESS_KEY)) ?? "";
 }
 
-export async function getStoredUpiId() {
-  return (await AsyncStorage.getItem(UPI_ID_KEY)) ?? "";
+export async function getStoredPlatformUpiId() {
+  return (await AsyncStorage.getItem(PLATFORM_UPI_ID_KEY)) ?? "";
+}
+
+export async function setStoredPlatformUpiId(upiId: string) {
+  await AsyncStorage.setItem(PLATFORM_UPI_ID_KEY, upiId.trim());
+}
+
+export async function getStoredCustomerRefundUpiId() {
+  return (await AsyncStorage.getItem(CUSTOMER_REFUND_UPI_ID_KEY)) ?? "";
+}
+
+export async function setStoredCustomerRefundUpiId(upiId: string) {
+  await AsyncStorage.setItem(CUSTOMER_REFUND_UPI_ID_KEY, upiId.trim());
 }
 
 export async function setStoredAddress(address: string) {
   await AsyncStorage.setItem(USER_ADDRESS_KEY, address.trim());
 }
-
-export async function setStoredUpiId(upiId: string) {
-  await AsyncStorage.setItem(UPI_ID_KEY, upiId.trim());
-}
-
 
 export type AppLanguage = "pa" | "en";
 
@@ -114,7 +125,6 @@ export async function getStoredLanguage(): Promise<AppLanguage> {
 export async function setStoredLanguage(language: AppLanguage) {
   await AsyncStorage.setItem(LANGUAGE_KEY, language);
 }
-
 
 export async function getStoredUserRole(): Promise<UserRole> {
   const value = await AsyncStorage.getItem(USER_ROLE_KEY);

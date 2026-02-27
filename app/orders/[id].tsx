@@ -293,6 +293,10 @@ export default function OrderDetail() {
           }}
         >
           <Text style={{ color: colors.text, fontWeight: "800" }}>Grand Total: ₹{order.total}</Text>
+          <Text style={{ marginTop: 6, color: colors.mutedText }}>
+            Payment receiver: {(order.paymentReceiverType ?? "platform").toUpperCase()}
+          </Text>
+          <Text style={{ marginTop: 2, color: colors.mutedText }}>UPI: {order.receiverUpiId ?? "N/A"}</Text>
         </View>
 
         <Pressable

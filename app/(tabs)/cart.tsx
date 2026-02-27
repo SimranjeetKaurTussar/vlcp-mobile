@@ -15,11 +15,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "../lib/cart";
 import {
   getStoredBusinessName,
-  getStoredUpiId,
+  getStoredPlatformUpiId,
   saveOrder,
   type LocalOrder,
 } from "../lib/storage";
-import { businessName, upiId, whatsappNumber } from "../lib/config";
+import { businessName, platformUpiId, whatsappNumber } from "../lib/config";
 import { useTheme } from "../theme/ThemeProvider";
 import { useT } from "../i18n/useT";
 
@@ -29,7 +29,7 @@ export default function Cart() {
   const { t } = useT();
   const [showUpiModal, setShowUpiModal] = useState(false);
   const [savedBusinessName, setSavedBusinessName] = useState(businessName);
-  const [savedUpiId, setSavedUpiId] = useState(upiId);
+  const [savedReceiverUpiId, setSavedReceiverUpiId] = useState(platformUpiId);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
   const deliveryFee = 0;
@@ -40,9 +40,9 @@ export default function Cart() {
   useEffect(() => {
     async function loadPaymentSettings() {
       const storedBusinessName = await getStoredBusinessName();
-      const storedUpiId = await getStoredUpiId();
+      const storedUpiId = await getStoredPlatformUpiId();
       setSavedBusinessName(storedBusinessName || businessName);
-      setSavedUpiId(storedUpiId || upiId);
+      setSavedReceiverUpiId(storedUpiId || platformUpiId);
     }
 
     loadPaymentSettings();
@@ -57,10 +57,10 @@ export default function Cart() {
 
   const upiPaymentUrl = useMemo(() => {
     const amount = grandTotal.toFixed(2);
-    return `upi://pay?pa=${encodeURIComponent(savedUpiId)}&pn=${encodeURIComponent(
+    return `upi://pay?pa=${encodeURIComponent(savedReceiverUpiId)}&pn=${encodeURIComponent(
       savedBusinessName
     )}&am=${encodeURIComponent(amount)}&cu=INR`;
-  }, [grandTotal, savedBusinessName, savedUpiId]);
+  }, [grandTotal, savedBusinessName, savedReceiverUpiId]);
 
   function confirmClearCart() {
     Alert.alert("Clear cart", "Remove all items from cart?", [
@@ -93,6 +93,8 @@ export default function Cart() {
       })),
       total: grandTotal,
       status: "Pending",
+      paymentReceiverType: "platform",
+      receiverUpiId: savedReceiverUpiId.trim(),
     };
 
     await saveOrder(order);
@@ -131,8 +133,8 @@ export default function Cart() {
   }
 
   async function openUpiApp() {
-    if (!savedUpiId.trim()) {
-      Alert.alert("Please set UPI ID in Profile settings");
+    if (!savedReceiverUpiId.trim()) {
+      Alert.alert("Please set payment receiver UPI in Profile settings");
       return;
     }
 
@@ -233,8 +235,8 @@ export default function Cart() {
 
         <Pressable
           onPress={() => {
-            if (!savedUpiId.trim()) {
-              Alert.alert("Please set UPI ID in Profile settings");
+            if (!savedReceiverUpiId.trim()) {
+              Alert.alert("Please set payment receiver UPI in Profile settings");
               return;
             }
 
@@ -250,11 +252,12 @@ export default function Cart() {
         <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" }}>
           <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: spacing.lg, borderWidth: 1, borderColor: colors.border }}>
             <Text style={{ color: colors.text, fontSize: fontSizes.subtitle + 2, fontWeight: "800" }}>{t("pay_via_upi")}</Text>
-            <Text style={{ color: colors.mutedText, marginTop: 6 }}>UPI ID: {savedUpiId || "Not set in Profile settings"}</Text>
+            <Text style={{ color: colors.mutedText, marginTop: 6 }}>Receiver: Platform</Text>
+            <Text style={{ color: colors.mutedText, marginTop: 4 }}>UPI ID: {savedReceiverUpiId || "Not set in Profile settings"}</Text>
             <Text style={{ color: colors.text, marginTop: 4, fontWeight: "700" }}>Amount: ₹{grandTotal.toFixed(2)}</Text>
 
             <View style={{ alignItems: "center", marginTop: spacing.md }}>
-              {savedUpiId ? (
+              {savedReceiverUpiId ? (
                 <Image
                   source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiPaymentUrl)}` }}
                   style={{ width: 180, height: 180, borderRadius: radius.md, backgroundColor: "#FFFFFF" }}
