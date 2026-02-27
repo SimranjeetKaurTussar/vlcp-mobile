@@ -1,10 +1,14 @@
 import { useEffect } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
+import { getAuthToken } from "./lib/storage";
 
 export default function Splash() {
   useEffect(() => {
-    const t = setTimeout(() => router.replace("/login"), 1200);
+    const t = setTimeout(async () => {
+      const token = await getAuthToken();
+      router.replace(token ? "/(tabs)" : "/login");
+    }, 500);
     return () => clearTimeout(t);
   }, []);
 
