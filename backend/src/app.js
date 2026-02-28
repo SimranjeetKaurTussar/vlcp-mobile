@@ -6,6 +6,7 @@ const cors = require("cors");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 const swaggerUi = require("swagger-ui-express");
+const openapi = require("./openapi.json");
 const swaggerJsdoc = require("swagger-jsdoc");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -37,7 +38,7 @@ const swaggerSpec = swaggerJsdoc({
       },
     },
   },
-  apis: [],
+  apis: ["./src/routes/*.js", "./src/controllers/*.js"],
 });
 
 app.use(helmet());
@@ -45,8 +46,7 @@ app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 app.use(morgan("tiny"));
 app.use(rateLimit({ windowMs: 60 * 1000, limit: 120 }));
-app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(openapi));
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
 app.post("/auth/login", async (req, res) => {
