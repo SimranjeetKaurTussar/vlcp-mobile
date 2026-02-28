@@ -1,14 +1,23 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Linking, Pressable, ScrollView, Text, View } from "react-native";
+import {
+  Alert,
+  Linking,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { products, sellerProfiles } from "../lib/data";
 import { getSellerProducts, type SellerProduct } from "../lib/storage";
 import { useTheme } from "../theme/ThemeProvider";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function SellerProfile() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const sellerName = decodeURIComponent(id ?? "");
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [sellerProducts, setSellerProducts] = useState<SellerProduct[]>([]);
 
   useEffect(() => {
@@ -31,7 +40,9 @@ export default function SellerProfile() {
   }, [sellerName, sellerProducts]);
 
   async function contactOnWhatsApp() {
-    const message = encodeURIComponent(`Hi ${sellerName}, I want to know more about your products.`);
+    const message = encodeURIComponent(
+      `Hi ${sellerName}, I want to know more about your products.`,
+    );
     const appUrl = `whatsapp://send?phone=${profile.phone}&text=${message}`;
     const webUrl = `https://wa.me/${profile.phone}?text=${message}`;
 
@@ -50,12 +61,25 @@ export default function SellerProfile() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 30 }}>
+      <ScrollView
+        contentContainerStyle={{
+          padding: 20,
+          paddingTop: insets.top + 20,
+          paddingBottom: 30,
+        }}
+      >
         <Pressable onPress={() => router.back()}>
           <Text style={{ color: colors.text, fontWeight: "700" }}>← Back</Text>
         </Pressable>
 
-        <Text style={{ marginTop: 12, fontSize: 24, fontWeight: "800", color: colors.text }}>
+        <Text
+          style={{
+            marginTop: 12,
+            fontSize: 24,
+            fontWeight: "800",
+            color: colors.text,
+          }}
+        >
           {sellerName}
         </Text>
 
@@ -70,10 +94,14 @@ export default function SellerProfile() {
           }}
         >
           <Text style={{ color: colors.mutedText }}>Village</Text>
-          <Text style={{ color: colors.text, fontWeight: "700" }}>{profile.village}</Text>
+          <Text style={{ color: colors.text, fontWeight: "700" }}>
+            {profile.village}
+          </Text>
 
           <Text style={{ marginTop: 8, color: colors.mutedText }}>Phone</Text>
-          <Text style={{ color: colors.text, fontWeight: "700" }}>{profile.phone}</Text>
+          <Text style={{ color: colors.text, fontWeight: "700" }}>
+            {profile.phone}
+          </Text>
 
           <Pressable
             onPress={contactOnWhatsApp}
@@ -91,12 +119,21 @@ export default function SellerProfile() {
           </Pressable>
         </View>
 
-        <Text style={{ marginTop: 18, fontSize: 18, fontWeight: "800", color: colors.text }}>
+        <Text
+          style={{
+            marginTop: 18,
+            fontSize: 18,
+            fontWeight: "800",
+            color: colors.text,
+          }}
+        >
           Products by this seller
         </Text>
 
         {list.length === 0 ? (
-          <Text style={{ marginTop: 10, color: colors.mutedText }}>No products found.</Text>
+          <Text style={{ marginTop: 10, color: colors.mutedText }}>
+            No products found.
+          </Text>
         ) : null}
 
         <View style={{ marginTop: 10, gap: 10 }}>
@@ -111,11 +148,15 @@ export default function SellerProfile() {
                 backgroundColor: colors.surface,
               }}
             >
-              <Text style={{ color: colors.text, fontWeight: "700" }}>{item.name}</Text>
+              <Text style={{ color: colors.text, fontWeight: "700" }}>
+                {item.name}
+              </Text>
               <Text style={{ marginTop: 4, color: colors.mutedText }}>
                 ₹{item.price} / {item.unit}
               </Text>
-              <Text style={{ marginTop: 2, color: colors.mutedText }}>{item.category}</Text>
+              <Text style={{ marginTop: 2, color: colors.mutedText }}>
+                {item.category}
+              </Text>
             </View>
           ))}
         </View>

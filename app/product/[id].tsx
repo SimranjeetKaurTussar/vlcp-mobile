@@ -1,8 +1,19 @@
-import { View, Text, ScrollView, Pressable, Animated, Alert, Linking, Image, Share } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  Animated,
+  Alert,
+  Linking,
+  Image,
+  Share,
+} from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { productImagePlaceholder, products, sellerProfiles } from "../lib/data";
 import { useCart } from "../lib/cart";
 import { useEffect, useRef, useState } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../theme/ThemeProvider";
 import { businessName, whatsappNumber } from "../lib/config";
 import { getStoredAddress } from "../lib/storage";
@@ -13,6 +24,7 @@ export default function ProductDetail() {
   const { addItem, decItem, items } = useCart();
   const { colors, spacing, radius, fontSizes, shadows } = useTheme();
   const { t } = useT();
+  const insets = useSafeAreaInsets();
 
   const [toast, setToast] = useState("");
   const toastAnim = useRef(new Animated.Value(0)).current;
@@ -36,7 +48,6 @@ export default function ProductDetail() {
       }).start(() => setToast(""));
     }, 1200);
   }
-
 
   useEffect(() => {
     async function loadAddress() {
@@ -79,18 +90,21 @@ export default function ProductDetail() {
   const sellerPhone = sellerProfile?.phone?.replace(/\D/g, "") ?? "";
   const canDeliver = userVillage
     ? sellerProfile?.deliversTo.some(
-        (village) => village.toLowerCase() === userVillage.trim().toLowerCase()
+        (village) => village.toLowerCase() === userVillage.trim().toLowerCase(),
       )
     : false;
 
   async function contactSellerOnWhatsApp() {
-    if (!sellerPhone) {
-      Alert.alert("Seller phone missing", "Seller contact is currently unavailable.");
+    if (!product || !sellerPhone) {
+      Alert.alert(
+        "Seller phone missing",
+        "Seller contact is currently unavailable.",
+      );
       return;
     }
 
     const message = encodeURIComponent(
-      `Hi ${product.seller}, I'm interested in ${product.name}. Is it available?`
+      `Hi ${product.seller}, I'm interested in ${product.name}. Is it available?`,
     );
     const appUrl = `whatsapp://send?phone=${sellerPhone}&text=${message}`;
     const webUrl = `https://wa.me/${sellerPhone}?text=${message}`;
@@ -117,7 +131,10 @@ export default function ProductDetail() {
     const canOpen = await Linking.canOpenURL(telUrl);
 
     if (!canOpen) {
-      Alert.alert("Unable to make call", "Calling is not supported on this device.");
+      Alert.alert(
+        "Unable to make call",
+        "Calling is not supported on this device.",
+      );
       return;
     }
 
@@ -125,6 +142,7 @@ export default function ProductDetail() {
   }
 
   async function shareProductInfo() {
+    if (!product) return;
     const shareText = `Check this on VLCP:
 ${product.name}
 Price: ₹${product.price}/${product.unit}
@@ -136,13 +154,18 @@ Seller: ${product.seller}`;
     const cleanWhatsAppNumber = whatsappNumber.replace(/\D/g, "");
 
     if (!cleanWhatsAppNumber || cleanWhatsAppNumber.includes("X")) {
-      Alert.alert("WhatsApp number missing", "Please set a valid WhatsApp number in Profile settings.");
+      Alert.alert(
+        "WhatsApp number missing",
+        "Please set a valid WhatsApp number in Profile settings.",
+      );
       return;
     }
     if (qty === 0) {
       showToast("Add quantity first");
       return;
     }
+
+    if (!product) return;
 
     const total = qty * product.price;
     const message = `Hi ${businessName}, I want to order:
@@ -167,7 +190,7 @@ Total: ₹${total}`;
     if (canOpenWeb) {
       Alert.alert(
         "WhatsApp not installed",
-        "No worries — opening WhatsApp web checkout in your browser."
+        "No worries — opening WhatsApp web checkout in your browser.",
       );
       await Linking.openURL(webUrl);
       return;
@@ -175,23 +198,40 @@ Total: ₹${total}`;
 
     Alert.alert(
       "Unable to open WhatsApp",
-      "Please install WhatsApp and try again."
+      "Please install WhatsApp and try again.",
     );
   }
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: 160 }}>
+      <ScrollView
+        contentContainerStyle={{
+          padding: spacing.lg,
+          paddingTop: insets.top + spacing.lg,
+          paddingBottom: 160,
+        }}
+      >
         <Pressable onPress={() => router.back()}>
-          <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>← Back</Text>
+          <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>
+            ← Back
+          </Text>
         </Pressable>
 
-        <Text style={{ marginTop: 14, fontSize: fontSizes.title, fontWeight: "900", color: colors.text }}>
+        <Text
+          style={{
+            marginTop: 14,
+            fontSize: fontSizes.title,
+            fontWeight: "900",
+            color: colors.text,
+          }}
+        >
           {product.name}
         </Text>
 
         <Pressable
-          onPress={() => router.push(`/seller/${encodeURIComponent(product.seller)}`)}
+          onPress={() =>
+            router.push(`/seller/${encodeURIComponent(product.seller)}`)
+          }
           style={{ marginTop: 6 }}
         >
           <Text style={{ color: colors.primary, fontWeight: "700" }}>
@@ -199,7 +239,13 @@ Total: ₹${total}`;
           </Text>
         </Pressable>
 
-        <Text style={{ marginTop: 6, color: canDeliver ? colors.primary : colors.mutedText, fontWeight: "700" }}>
+        <Text
+          style={{
+            marginTop: 6,
+            color: canDeliver ? colors.primary : colors.mutedText,
+            fontWeight: "700",
+          }}
+        >
           {userVillage
             ? canDeliver
               ? "Delivery available"
@@ -263,7 +309,9 @@ Total: ₹${total}`;
             Contact Seller
           </Text>
 
-          <View style={{ marginTop: spacing.sm, flexDirection: "row", gap: 10 }}>
+          <View
+            style={{ marginTop: spacing.sm, flexDirection: "row", gap: 10 }}
+          >
             <Pressable
               onPress={contactSellerOnWhatsApp}
               style={({ pressed }) => ({
@@ -275,7 +323,9 @@ Total: ₹${total}`;
                 opacity: pressed ? 0.9 : 1,
               })}
             >
-              <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>WhatsApp</Text>
+              <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>
+                WhatsApp
+              </Text>
             </Pressable>
 
             <Pressable
@@ -292,7 +342,9 @@ Total: ₹${total}`;
                 opacity: !sellerPhone ? 0.45 : pressed ? 0.9 : 1,
               })}
             >
-              <Text style={{ color: colors.text, fontWeight: "800" }}>Call</Text>
+              <Text style={{ color: colors.text, fontWeight: "800" }}>
+                Call
+              </Text>
             </Pressable>
 
             <Pressable
@@ -308,12 +360,16 @@ Total: ₹${total}`;
                 opacity: pressed ? 0.9 : 1,
               })}
             >
-              <Text style={{ color: colors.text, fontWeight: "800" }}>Share</Text>
+              <Text style={{ color: colors.text, fontWeight: "800" }}>
+                Share
+              </Text>
             </Pressable>
           </View>
 
           {!sellerPhone ? (
-            <Text style={{ marginTop: 8, color: colors.mutedText, fontSize: 12 }}>
+            <Text
+              style={{ marginTop: 8, color: colors.mutedText, fontSize: 12 }}
+            >
               Seller phone not available right now.
             </Text>
           ) : null}
@@ -342,7 +398,9 @@ Total: ₹${total}`;
             marginBottom: 12,
           }}
         >
-          <Text style={{ fontSize: 16, fontWeight: "900", color: colors.text }}>{t("quantity")}</Text>
+          <Text style={{ fontSize: 16, fontWeight: "900", color: colors.text }}>
+            {t("quantity")}
+          </Text>
 
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <Pressable
@@ -355,10 +413,16 @@ Total: ₹${total}`;
                 opacity: qty > 0 ? 1 : 0.4,
               }}
             >
-              <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>−</Text>
+              <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>
+                −
+              </Text>
             </Pressable>
 
-            <Text style={{ fontSize: 16, fontWeight: "900", color: colors.text }}>{qty}</Text>
+            <Text
+              style={{ fontSize: 16, fontWeight: "900", color: colors.text }}
+            >
+              {qty}
+            </Text>
 
             <Pressable
               onPress={() => {
@@ -372,7 +436,9 @@ Total: ₹${total}`;
                 borderRadius: 12,
               }}
             >
-              <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>+</Text>
+              <Text style={{ color: colors.onPrimary, fontWeight: "900" }}>
+                +
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -414,7 +480,9 @@ Total: ₹${total}`;
               opacity: pressed ? 0.9 : 1,
             })}
           >
-            <Text style={{ fontWeight: "900", color: colors.text }}>{t("buy")}</Text>
+            <Text style={{ fontWeight: "900", color: colors.text }}>
+              {t("buy")}
+            </Text>
           </Pressable>
         </View>
       </View>

@@ -1,164 +1,247 @@
-import { Tabs, router, useFocusEffect } from "expo-router";
+import { Tabs, Redirect } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { useCart } from "../lib/cart";
 import { getAuthToken, getStoredUserRole, type UserRole } from "../lib/storage";
 import { useTheme } from "../theme/ThemeProvider";
 import { setUnauthorizedHandler } from "../lib/api";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function TabsLayout() {
   const { items } = useCart();
   const { colors } = useTheme();
+
   const [role, setRole] = useState<UserRole>("customer");
-  const [authorized, setAuthorized] = useState(false);
-  const [isHydratingRole, setIsHydratingRole] = useState(true);
+  const [authorized, setAuthorized] = useState<boolean | null>(null); // null = loading
+  const [isHydrating, setIsHydrating] = useState(true);
+
   const count = items.reduce((sum, i) => sum + i.qty, 0);
 
-  useFocusEffect(
-    useCallback(() => {
-      async function loadContext() {
-        setIsHydratingRole(true);
-        const token = await getAuthToken();
+  const loadContext = useCallback(async () => {
+    setIsHydrating(true);
 
-        if (!token) {
-          setAuthorized(false);
-          setRole("customer");
-          setIsHydratingRole(false);
-          router.replace("/login");
-          return;
-        }
+    const token = await getAuthToken();
+    if (!token) {
+      setAuthorized(false);
+      setRole("customer");
+      setIsHydrating(false);
+      return;
+    }
 
-        setAuthorized(true);
-        const nextRole = await getStoredUserRole();
-        setRole(nextRole);
-        setIsHydratingRole(false);
-      }
-
-      loadContext();
-    }, [])
-  );
+    setAuthorized(true);
+    const nextRole = await getStoredUserRole();
+    setRole(nextRole || "customer");
+    setIsHydrating(false);
+  }, []);
 
   useEffect(() => {
+    loadContext();
+  }, [loadContext]);
+
+  useEffect(() => {
+    // IMPORTANT: Do NOT router.replace here. Just flip auth state.
     setUnauthorizedHandler(() => {
       setAuthorized(false);
       setRole("customer");
-      setIsHydratingRole(false);
-      router.replace("/login");
+      setIsHydrating(false);
     });
 
     return () => setUnauthorizedHandler(null);
   }, []);
 
-  if (isHydratingRole) {
+  // Loading screen (safe)
+  if (isHydrating || authorized === null) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background }}>
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: colors.background,
+        }}
+      >
         <ActivityIndicator color={colors.primary} />
       </View>
     );
   }
 
+  // If not authorized, redirect safely (NO router.replace)
   if (!authorized) {
-    return null;
+    return <Redirect href="/login" />;
   }
 
-  // Role is the source of truth for tab rendering. Seller tab is only for role === "seller".
   const showSellerTab = role === "seller";
-  // eslint-disable-next-line no-console
-  console.log("[TabsLayout] auth.role for tabs:", role);
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
-          borderTopLeftRadius: 18,
-          borderTopRightRadius: 18,
-          height: 64,
-          paddingTop: 6,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: -3 },
-          shadowOpacity: 0.12,
-          shadowRadius: 8,
-          elevation: 10,
-        },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.mutedText,
-      }}
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      edges={["top", "left", "right"]}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons name={focused ? "home" : "home-outline"} size={size} color={color} />
-          ),
-          tabBarLabel: ({ color, focused }) => (
-            <Text style={{ color, fontWeight: focused ? "800" : "500", fontSize: 12 }}>Home</Text>
-          ),
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: {
+            backgroundColor: colors.surface,
+            borderTopColor: colors.border,
+            borderTopWidth: 1,
+            borderTopLeftRadius: 18,
+            borderTopRightRadius: 18,
+            height: 64,
+            paddingTop: 6,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: -3 },
+            shadowOpacity: 0.12,
+            shadowRadius: 8,
+            elevation: 10,
+          },
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.mutedText,
         }}
-      />
-      <Tabs.Screen
-        name="categories"
-        options={{
-          title: "Categories",
-          tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons name={focused ? "grid" : "grid-outline"} size={size} color={color} />
-          ),
-          tabBarLabel: ({ color, focused }) => (
-            <Text style={{ color, fontWeight: focused ? "800" : "500", fontSize: 12 }}>
-              Categories
-            </Text>
-          ),
-        }}
-      />
-      {/* Keep tab route names/order constant across roles to avoid TabRouter stale-state crashes. */}
-      <Tabs.Screen
-        name="seller-hub"
-        options={{
-          title: "Seller",
-          tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons name={focused ? "storefront" : "storefront-outline"} size={size} color={color} />
-          ),
-          tabBarLabel: ({ color, focused }) => (
-            <Text style={{ color, fontWeight: focused ? "800" : "500", fontSize: 12 }}>Seller</Text>
-          ),
-          ...(showSellerTab
-            ? {}
-            : {
-                tabBarButton: () => null,
-                tabBarItemStyle: { display: "none" },
-              }),
-        }}
-      />
-      <Tabs.Screen
-        name="cart"
-        options={{
-          title: "Cart",
-          tabBarBadge: count > 0 ? count : undefined,
-          tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons name={focused ? "cart" : "cart-outline"} size={size} color={color} />
-          ),
-          tabBarLabel: ({ color, focused }) => (
-            <Text style={{ color, fontWeight: focused ? "800" : "500", fontSize: 12 }}>Cart</Text>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Profile",
-          tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons name={focused ? "person" : "person-outline"} size={size} color={color} />
-          ),
-          tabBarLabel: ({ color, focused }) => (
-            <Text style={{ color, fontWeight: focused ? "800" : "500", fontSize: 12 }}>Profile</Text>
-          ),
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: "Home",
+            tabBarIcon: ({ color, focused, size }) => (
+              <Ionicons
+                name={focused ? "home" : "home-outline"}
+                size={size}
+                color={color}
+              />
+            ),
+            tabBarLabel: ({ color, focused }) => (
+              <Text
+                style={{
+                  color,
+                  fontWeight: focused ? "600" : "500",
+                  fontSize: 12,
+                }}
+              >
+                Home
+              </Text>
+            ),
+          }}
+        />
+
+        <Tabs.Screen
+          name="categories"
+          options={{
+            title: "Categories",
+            tabBarIcon: ({ color, focused, size }) => (
+              <Ionicons
+                name={focused ? "grid" : "grid-outline"}
+                size={size}
+                color={color}
+              />
+            ),
+            tabBarLabel: ({ color, focused }) => (
+              <Text
+                style={{
+                  color,
+                  fontWeight: focused ? "600" : "500",
+                  fontSize: 12,
+                }}
+              >
+                Categories
+              </Text>
+            ),
+          }}
+        />
+
+        {/* Keep route name constant. Hide with ZERO-SIZE button (NOT null) */}
+        <Tabs.Screen
+          name="seller-hub"
+          options={{
+            title: "Seller",
+            tabBarIcon: ({ color, focused, size }) => (
+              <Ionicons
+                name={focused ? "storefront" : "storefront-outline"}
+                size={size}
+                color={color}
+              />
+            ),
+            tabBarLabel: ({ color, focused }) => (
+              <Text
+                style={{
+                  color,
+                  fontWeight: focused ? "600" : "500",
+                  fontSize: 12,
+                }}
+              >
+                Seller
+              </Text>
+            ),
+            tabBarButton: ({ ref: _ref, ...props }) => {
+              if (showSellerTab) return <Pressable {...props} />;
+
+              // Hidden but stable (no crash)
+              return (
+                <Pressable
+                  {...props}
+                  disabled
+                  style={{
+                    width: 0,
+                    height: 0,
+                    opacity: 0,
+                  }}
+                />
+              );
+            },
+          }}
+        />
+
+        <Tabs.Screen
+          name="cart"
+          options={{
+            title: "Cart",
+            tabBarBadge: count > 0 ? count : undefined,
+            tabBarIcon: ({ color, focused, size }) => (
+              <Ionicons
+                name={focused ? "cart" : "cart-outline"}
+                size={size}
+                color={color}
+              />
+            ),
+            tabBarLabel: ({ color, focused }) => (
+              <Text
+                style={{
+                  color,
+                  fontWeight: focused ? "600" : "500",
+                  fontSize: 12,
+                }}
+              >
+                Cart
+              </Text>
+            ),
+          }}
+        />
+
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: "Profile",
+            tabBarIcon: ({ color, focused, size }) => (
+              <Ionicons
+                name={focused ? "person" : "person-outline"}
+                size={size}
+                color={color}
+              />
+            ),
+            tabBarLabel: ({ color, focused }) => (
+              <Text
+                style={{
+                  color,
+                  fontWeight: focused ? "600" : "500",
+                  fontSize: 12,
+                }}
+              >
+                Profile
+              </Text>
+            ),
+          }}
+        />
+      </Tabs>
+    </SafeAreaView>
   );
 }

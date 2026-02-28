@@ -1,12 +1,27 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { businessName, loadBusinessConfig } from "../lib/config";
-import { getSellerProducts, getStoredUserRole, saveSellerProducts, type SellerProduct, type UserRole } from "../lib/storage";
+import {
+  getSellerProducts,
+  getStoredUserRole,
+  saveSellerProducts,
+  type SellerProduct,
+  type UserRole,
+} from "../lib/storage";
 import { useTheme } from "../theme/ThemeProvider";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function AddProduct() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
@@ -25,7 +40,7 @@ export default function AddProduct() {
       }
 
       loadCtx();
-    }, [])
+    }, []),
   );
 
   async function saveProduct() {
@@ -59,22 +74,48 @@ export default function AddProduct() {
 
   if (role !== "seller" && role !== "admin") {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background }}>
-        <Text style={{ color: colors.text, fontWeight: "800" }}>Seller access only</Text>
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: colors.background,
+        }}
+      >
+        <Text style={{ color: colors.text, fontWeight: "800" }}>
+          Seller access only
+        </Text>
       </View>
     );
   }
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 30 }}>
+      <ScrollView
+        contentContainerStyle={{
+          padding: 20,
+          paddingTop: insets.top + 20,
+          paddingBottom: 30,
+        }}
+      >
         <Pressable onPress={() => router.back()}>
           <Text style={{ color: colors.text, fontWeight: "700" }}>← Back</Text>
         </Pressable>
 
-        <Text style={{ marginTop: 12, fontSize: 24, fontWeight: "800", color: colors.text }}>Add Product</Text>
+        <Text
+          style={{
+            marginTop: 12,
+            fontSize: 24,
+            fontWeight: "800",
+            color: colors.text,
+          }}
+        >
+          Add Product
+        </Text>
 
-        <Text style={{ marginTop: 14, color: colors.text, fontWeight: "600" }}>Name</Text>
+        <Text style={{ marginTop: 14, color: colors.text, fontWeight: "600" }}>
+          Name
+        </Text>
         <TextInput
           value={name}
           onChangeText={setName}
@@ -90,7 +131,9 @@ export default function AddProduct() {
           }}
         />
 
-        <Text style={{ marginTop: 12, color: colors.text, fontWeight: "600" }}>Price</Text>
+        <Text style={{ marginTop: 12, color: colors.text, fontWeight: "600" }}>
+          Price
+        </Text>
         <TextInput
           value={price}
           onChangeText={setPrice}
@@ -107,7 +150,9 @@ export default function AddProduct() {
           }}
         />
 
-        <Text style={{ marginTop: 12, color: colors.text, fontWeight: "600" }}>Unit</Text>
+        <Text style={{ marginTop: 12, color: colors.text, fontWeight: "600" }}>
+          Unit
+        </Text>
         <TextInput
           value={unit}
           onChangeText={setUnit}
@@ -123,7 +168,9 @@ export default function AddProduct() {
           }}
         />
 
-        <Text style={{ marginTop: 12, color: colors.text, fontWeight: "600" }}>Category</Text>
+        <Text style={{ marginTop: 12, color: colors.text, fontWeight: "600" }}>
+          Category
+        </Text>
         <TextInput
           value={category}
           onChangeText={setCategory}
@@ -139,7 +186,9 @@ export default function AddProduct() {
           }}
         />
 
-        <Text style={{ marginTop: 12, color: colors.text, fontWeight: "600" }}>Stock</Text>
+        <Text style={{ marginTop: 12, color: colors.text, fontWeight: "600" }}>
+          Stock
+        </Text>
         <TextInput
           value={stock}
           onChangeText={setStock}
@@ -166,7 +215,9 @@ export default function AddProduct() {
             alignItems: "center",
           }}
         >
-          <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>Save Product</Text>
+          <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>
+            Save Product
+          </Text>
         </Pressable>
       </ScrollView>
     </View>

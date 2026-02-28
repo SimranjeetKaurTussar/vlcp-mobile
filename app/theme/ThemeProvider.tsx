@@ -7,8 +7,20 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { darkColors, lightColors, radius, spacing, fontSizes, shadows, typography } from "./tokens";
-import { getStoredThemeMode, setStoredThemeMode, type ThemeMode } from "../lib/storage";
+import {
+  darkColors,
+  lightColors,
+  radius,
+  spacing,
+  fontSizes,
+  shadows,
+  typography,
+} from "./tokens";
+import {
+  getStoredThemeMode,
+  setStoredThemeMode,
+  type ThemeMode,
+} from "../lib/storage";
 import { loadBusinessConfig } from "../lib/config";
 
 type ResolvedMode = "light" | "dark";
@@ -27,7 +39,10 @@ type ThemeValue = {
 
 const ThemeContext = createContext<ThemeValue | null>(null);
 
-function resolveMode(mode: ThemeMode, system: ColorSchemeName): ResolvedMode {
+function resolveMode(
+  mode: ThemeMode,
+  system: ColorSchemeName | null,
+): ResolvedMode {
   if (mode === "system") {
     return system === "dark" ? "dark" : "light";
   }
@@ -38,8 +53,8 @@ function resolveMode(mode: ThemeMode, system: ColorSchemeName): ResolvedMode {
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<ThemeMode>("system");
   const [isReady, setIsReady] = useState(false);
-  const [systemScheme, setSystemScheme] = useState<ColorSchemeName>(
-    Appearance.getColorScheme()
+  const [systemScheme, setSystemScheme] = useState<ColorSchemeName | null>(
+    Appearance.getColorScheme() ?? null,
   );
 
   useEffect(() => {
@@ -92,7 +107,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return null;
   }
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+  );
 }
 
 export function useTheme() {

@@ -6,10 +6,12 @@ import { products } from "./lib/data";
 import { getOrders, getSellerProducts, type LocalOrder } from "./lib/storage";
 import { useTheme } from "./theme/ThemeProvider";
 import { useT } from "./i18n/useT";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function OrdersScreen() {
   const { colors, spacing, radius, fontSizes, shadows } = useTheme();
   const { t } = useT();
+  const insets = useSafeAreaInsets();
   const { addItem, clearCart } = useCart();
   const [orders, setOrders] = useState<LocalOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -22,14 +24,15 @@ export default function OrdersScreen() {
         setIsLoading(true);
         const stored = await getOrders();
         const sorted = [...stored].sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         );
         setOrders(sorted);
         setIsLoading(false);
       }
 
       load();
-    }, [])
+    }, []),
   );
 
   function showToast(message: string) {
@@ -119,7 +122,10 @@ export default function OrdersScreen() {
     });
 
     if (missingItems.length > 0) {
-      Alert.alert("Some items no longer available", `${missingItems.join(", ")} were skipped.`);
+      Alert.alert(
+        "Some items no longer available",
+        `${missingItems.join(", ")} were skipped.`,
+      );
     }
 
     showToast("Added to cart ✅");
@@ -152,7 +158,9 @@ export default function OrdersScreen() {
           ...shadows.card,
         })}
       >
-        <Text style={{ color: colors.text, fontWeight: "700" }}>{new Date(order.createdAt).toLocaleString()}</Text>
+        <Text style={{ color: colors.text, fontWeight: "700" }}>
+          {new Date(order.createdAt).toLocaleString()}
+        </Text>
 
         <View
           style={{
@@ -164,10 +172,14 @@ export default function OrdersScreen() {
             ...statusStyle(order.status),
           }}
         >
-          <Text style={{ color: "white", fontWeight: "700", fontSize: 12 }}>{statusLabel(order.status)}</Text>
+          <Text style={{ color: "white", fontWeight: "700", fontSize: 12 }}>
+            {statusLabel(order.status)}
+          </Text>
         </View>
 
-        <Text style={{ marginTop: 10, color: colors.text, fontWeight: "800" }}>Total: ₹{order.total}</Text>
+        <Text style={{ marginTop: 10, color: colors.text, fontWeight: "800" }}>
+          Total: ₹{order.total}
+        </Text>
 
         <Pressable
           onPress={(event) => {
@@ -183,7 +195,9 @@ export default function OrdersScreen() {
             opacity: pressed ? 0.9 : 1,
           })}
         >
-          <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>Order Again</Text>
+          <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>
+            Order Again
+          </Text>
         </Pressable>
       </Pressable>
     );
@@ -194,26 +208,40 @@ export default function OrdersScreen() {
       <FlatList
         data={isLoading ? [] : orders}
         keyExtractor={(order) => String(order.id)}
-        contentContainerStyle={{ padding: spacing.lg, paddingBottom: 30 }}
+        contentContainerStyle={{
+          padding: spacing.lg,
+          paddingTop: insets.top + spacing.lg,
+          paddingBottom: 30,
+        }}
         ListHeaderComponent={
           <>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-              <Pressable
-                onPress={() => router.back()}
-                style={({ pressed }) => ({
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: radius.md,
-                  paddingHorizontal: 12,
-                  paddingVertical: 8,
-                  backgroundColor: colors.surface,
-                  opacity: pressed ? 0.9 : 1,
-                })}
-              >
-                <Text style={{ fontSize: 14, fontWeight: "800", color: colors.text }}>← Back</Text>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 10,
+              }}
+            >
+              <Pressable onPress={() => router.back()}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "800",
+                    color: colors.text,
+                  }}
+                >
+                  ← Back
+                </Text>
               </Pressable>
 
-              <Text style={{ fontSize: fontSizes.subtitle + 6, fontWeight: "800", color: colors.text }}>
+              <Text
+                style={{
+                  fontSize: fontSizes.subtitle + 6,
+                  fontWeight: "800",
+                  color: colors.text,
+                }}
+              >
                 {t("orders")}
               </Text>
 
@@ -221,9 +249,23 @@ export default function OrdersScreen() {
             </View>
 
             {!isLoading && orders.length === 0 ? (
-              <View style={{ marginTop: 12, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: spacing.md, backgroundColor: colors.surface, ...shadows.card }}>
-                <Text style={{ color: colors.text, fontWeight: "700" }}>{t("no_orders")}</Text>
-                <Text style={{ marginTop: 4, color: colors.mutedText }}>Your placed orders will appear here.</Text>
+              <View
+                style={{
+                  marginTop: 12,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  borderRadius: radius.lg,
+                  padding: spacing.md,
+                  backgroundColor: colors.surface,
+                  ...shadows.card,
+                }}
+              >
+                <Text style={{ color: colors.text, fontWeight: "700" }}>
+                  {t("no_orders")}
+                </Text>
+                <Text style={{ marginTop: 4, color: colors.mutedText }}>
+                  Your placed orders will appear here.
+                </Text>
               </View>
             ) : null}
 
@@ -240,9 +282,30 @@ export default function OrdersScreen() {
                       backgroundColor: colors.surface,
                     }}
                   >
-                    <View style={{ height: 14, borderRadius: 8, backgroundColor: colors.background }} />
-                    <View style={{ marginTop: 8, height: 12, width: "60%", borderRadius: 8, backgroundColor: colors.background }} />
-                    <View style={{ marginTop: 10, height: 36, borderRadius: 10, backgroundColor: colors.background }} />
+                    <View
+                      style={{
+                        height: 14,
+                        borderRadius: 8,
+                        backgroundColor: colors.background,
+                      }}
+                    />
+                    <View
+                      style={{
+                        marginTop: 8,
+                        height: 12,
+                        width: "60%",
+                        borderRadius: 8,
+                        backgroundColor: colors.background,
+                      }}
+                    />
+                    <View
+                      style={{
+                        marginTop: 10,
+                        height: 36,
+                        borderRadius: 10,
+                        backgroundColor: colors.background,
+                      }}
+                    />
                   </View>
                 ))
               : null}
@@ -271,7 +334,9 @@ export default function OrdersScreen() {
               alignItems: "center",
             }}
           >
-            <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>{toast}</Text>
+            <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>
+              {toast}
+            </Text>
           </View>
         </Animated.View>
       ) : null}

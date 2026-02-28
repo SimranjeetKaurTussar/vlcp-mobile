@@ -1,6 +1,13 @@
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useRef, useState } from "react";
-import { Alert, Animated, Pressable, ScrollView, Text, View } from "react-native";
+import {
+  Alert,
+  Animated,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import * as Notifications from "expo-notifications";
 import { useCart } from "../lib/cart";
 import { products } from "../lib/data";
@@ -15,11 +22,13 @@ import {
 import { canUpdateOrderStatus, normalizeDelivered } from "../lib/rbac";
 import type { UserRole } from "../lib/storage";
 import { useTheme } from "../theme/ThemeProvider";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function OrderDetail() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const orderId = Array.isArray(id) ? id[0] : id;
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { addItem, clearCart } = useCart();
   const [order, setOrder] = useState<LocalOrder | null>(null);
   const [toast, setToast] = useState("");
@@ -29,7 +38,10 @@ export default function OrderDetail() {
   useFocusEffect(
     useCallback(() => {
       async function loadOrder() {
-        const [all, currentRole] = await Promise.all([getOrders(), getStoredUserRole()]);
+        const [all, currentRole] = await Promise.all([
+          getOrders(),
+          getStoredUserRole(),
+        ]);
         setRole(currentRole);
         if (!orderId) {
           setOrder(null);
@@ -40,7 +52,7 @@ export default function OrderDetail() {
       }
 
       loadOrder();
-    }, [orderId])
+    }, [orderId]),
   );
 
   function statusLabel(status: OrderStatus) {
@@ -154,7 +166,10 @@ export default function OrderDetail() {
     });
 
     if (missingItems.length > 0) {
-      Alert.alert("Some items no longer available", `${missingItems.join(", ")} were skipped.`);
+      Alert.alert(
+        "Some items no longer available",
+        `${missingItems.join(", ")} were skipped.`,
+      );
     }
 
     showToast("Added to cart ✅");
@@ -171,8 +186,18 @@ export default function OrderDetail() {
 
   if (!order) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background, padding: 20 }}>
-        <Text style={{ color: colors.text, fontWeight: "700", fontSize: 18 }}>Order not found</Text>
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: colors.background,
+          padding: 20,
+        }}
+      >
+        <Text style={{ color: colors.text, fontWeight: "700", fontSize: 18 }}>
+          Order not found
+        </Text>
         <Pressable
           onPress={() => router.back()}
           style={({ pressed }) => ({
@@ -194,24 +219,31 @@ export default function OrderDetail() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 30 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <Pressable
-            onPress={() => router.back()}
-            style={({ pressed }) => ({
-              borderWidth: 1,
-              borderColor: colors.border,
-              borderRadius: 12,
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              backgroundColor: colors.surface,
-              opacity: pressed ? 0.9 : 1,
-            })}
-          >
-            <Text style={{ color: colors.text, fontWeight: "700" }}>← Back</Text>
+      <ScrollView
+        contentContainerStyle={{
+          padding: 20,
+          paddingTop: insets.top + 20,
+          paddingBottom: 30,
+        }}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Pressable onPress={() => router.back()}>
+            <Text
+              style={{ fontSize: 16, fontWeight: "800", color: colors.text }}
+            >
+              ← Back
+            </Text>
           </Pressable>
 
-          <Text style={{ fontSize: 22, fontWeight: "800", color: colors.text }}>Order Details</Text>
+          <Text style={{ fontSize: 22, fontWeight: "800", color: colors.text }}>
+            Order Details
+          </Text>
 
           <View style={{ width: 64 }} />
         </View>
@@ -220,19 +252,30 @@ export default function OrderDetail() {
           {new Date(order.createdAt).toLocaleString()}
         </Text>
 
-        <Text style={{ marginTop: 6, color: colors.mutedText }}>Status: {statusLabel(normalizeDelivered(order.status))}</Text>
+        <Text style={{ marginTop: 6, color: colors.mutedText }}>
+          Status: {statusLabel(normalizeDelivered(order.status))}
+        </Text>
 
         {role === "customer" ? null : (
-          <View style={{ marginTop: 10, flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-            {([
-              "Accepted",
-              "PACKED",
-              "READY_FOR_PICKUP",
-              "DISPATCHED",
-              "PICKED_UP",
-              "OUT_FOR_DELIVERY",
-              "Delivered",
-            ] as const)
+          <View
+            style={{
+              marginTop: 10,
+              flexDirection: "row",
+              gap: 8,
+              flexWrap: "wrap",
+            }}
+          >
+            {(
+              [
+                "Accepted",
+                "PACKED",
+                "READY_FOR_PICKUP",
+                "DISPATCHED",
+                "PICKED_UP",
+                "OUT_FOR_DELIVERY",
+                "Delivered",
+              ] as const
+            )
               .filter((status) => canUpdateOrderStatus(role, status))
               .map((status) => {
                 const active = normalizeDelivered(order.status) === status;
@@ -250,7 +293,12 @@ export default function OrderDetail() {
                       paddingHorizontal: 12,
                     }}
                   >
-                    <Text style={{ color: active ? colors.onPrimary : colors.text, fontWeight: "700" }}>
+                    <Text
+                      style={{
+                        color: active ? colors.onPrimary : colors.text,
+                        fontWeight: "700",
+                      }}
+                    >
                       {statusLabel(status)}
                     </Text>
                   </Pressable>
@@ -271,11 +319,15 @@ export default function OrderDetail() {
                 backgroundColor: colors.surface,
               }}
             >
-              <Text style={{ color: colors.text, fontWeight: "700" }}>{item.name}</Text>
+              <Text style={{ color: colors.text, fontWeight: "700" }}>
+                {item.name}
+              </Text>
               <Text style={{ marginTop: 4, color: colors.mutedText }}>
                 {item.qty} x ₹{item.price} / {item.unit}
               </Text>
-              <Text style={{ marginTop: 4, color: colors.text, fontWeight: "700" }}>
+              <Text
+                style={{ marginTop: 4, color: colors.text, fontWeight: "700" }}
+              >
                 ₹{item.qty * item.price}
               </Text>
             </View>
@@ -292,11 +344,16 @@ export default function OrderDetail() {
             backgroundColor: colors.surface,
           }}
         >
-          <Text style={{ color: colors.text, fontWeight: "800" }}>Grand Total: ₹{order.total}</Text>
-          <Text style={{ marginTop: 6, color: colors.mutedText }}>
-            Payment receiver: {(order.paymentReceiverType ?? "platform").toUpperCase()}
+          <Text style={{ color: colors.text, fontWeight: "800" }}>
+            Grand Total: ₹{order.total}
           </Text>
-          <Text style={{ marginTop: 2, color: colors.mutedText }}>UPI: {order.receiverUpiId ?? "N/A"}</Text>
+          <Text style={{ marginTop: 6, color: colors.mutedText }}>
+            Payment receiver:{" "}
+            {(order.paymentReceiverType ?? "platform").toUpperCase()}
+          </Text>
+          <Text style={{ marginTop: 2, color: colors.mutedText }}>
+            UPI: {order.receiverUpiId ?? "N/A"}
+          </Text>
         </View>
 
         <Pressable
@@ -309,7 +366,9 @@ export default function OrderDetail() {
             alignItems: "center",
           }}
         >
-          <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>Reorder</Text>
+          <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>
+            Reorder
+          </Text>
         </Pressable>
       </ScrollView>
 
@@ -332,7 +391,9 @@ export default function OrderDetail() {
               alignItems: "center",
             }}
           >
-            <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>{toast}</Text>
+            <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>
+              {toast}
+            </Text>
           </View>
         </Animated.View>
       ) : null}

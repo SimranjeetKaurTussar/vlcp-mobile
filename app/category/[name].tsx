@@ -11,6 +11,7 @@ import {
 import { useCart } from "../lib/cart";
 import { products } from "../lib/data";
 import { useTheme } from "../theme/ThemeProvider";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type SortOption = "default" | "lowToHigh" | "highToLow";
 
@@ -25,6 +26,7 @@ export default function CategoryProducts() {
 
   const { addItem } = useCart();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   function showToast(message: string) {
     setToast(message);
@@ -75,7 +77,13 @@ export default function CategoryProducts() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 90 }}>
+      <ScrollView
+        contentContainerStyle={{
+          padding: 20,
+          paddingTop: insets.top + 20,
+          paddingBottom: 90,
+        }}
+      >
         <Pressable onPress={() => router.back()}>
           <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>
             ← Back
@@ -110,7 +118,9 @@ export default function CategoryProducts() {
         />
 
         <View style={{ marginTop: 12 }}>
-          <Text style={{ color: colors.mutedText, fontWeight: "600" }}>Sort</Text>
+          <Text style={{ color: colors.mutedText, fontWeight: "600" }}>
+            Sort
+          </Text>
           <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
             {[
               { key: "default", label: "Default" },
@@ -160,7 +170,9 @@ export default function CategoryProducts() {
                 backgroundColor: colors.surface,
               }}
             >
-              <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>
+              <Text
+                style={{ fontSize: 16, fontWeight: "800", color: colors.text }}
+              >
                 {product.name}
               </Text>
 
@@ -176,7 +188,13 @@ export default function CategoryProducts() {
                   justifyContent: "space-between",
                 }}
               >
-                <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "800",
+                    color: colors.text,
+                  }}
+                >
                   ₹{product.price} / {product.unit}
                 </Text>
 
@@ -236,7 +254,9 @@ export default function CategoryProducts() {
               alignItems: "center",
             }}
           >
-            <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>{toast}</Text>
+            <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>
+              {toast}
+            </Text>
           </View>
         </Animated.View>
       ) : null}

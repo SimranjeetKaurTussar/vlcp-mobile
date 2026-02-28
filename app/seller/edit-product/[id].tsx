@@ -9,6 +9,7 @@ import {
   type UserRole,
 } from "../../lib/storage";
 import { useTheme } from "../../theme/ThemeProvider";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function EditProduct() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -21,6 +22,7 @@ export default function EditProduct() {
   const [category, setCategory] = useState("");
   const [stock, setStock] = useState("");
   const [role, setRole] = useState<UserRole>("customer");
+  const insets = useSafeAreaInsets();
 
   useFocusEffect(
     useCallback(() => {
@@ -104,7 +106,7 @@ export default function EditProduct() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 30 }}>
+      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 30, paddingTop: insets.top + 20, }}>
         <Pressable onPress={() => router.back()}>
           <Text style={{ color: colors.text, fontWeight: "700" }}>← Back</Text>
         </Pressable>
