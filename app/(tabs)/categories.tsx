@@ -2,8 +2,8 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
-import { categories, products } from "../lib/data";
-import { getSellerProducts, type SellerProduct } from "../lib/storage";
+import { categories, type AppProduct } from "../lib/data";
+import { api } from "../lib/api";
 import { useTheme } from "../theme/ThemeProvider";
 
 const categoryMeta: Record<
@@ -21,20 +21,45 @@ const categoryMeta: Record<
 export default function Categories() {
   const { colors, spacing, radius, fontSizes, shadows } = useTheme();
   const [query, setQuery] = useState("");
-  const [sellerProducts, setSellerProducts] = useState<SellerProduct[]>([]);
+  const [backendProducts, setBackendProducts] = useState<AppProduct[]>([]);
 
   useFocusEffect(
     useCallback(() => {
-      async function loadSellerProducts() {
-        const stored = await getSellerProducts();
-        setSellerProducts(stored);
+      async function loadProducts() {
+        try {
+          const response = await api.get<{
+            items: Array<{
+              id: string;
+              title: string;
+              price: number | string;
+              images: unknown;
+            }>;
+          }>("/products");
+
+          const normalized = response.items.map((item) => ({
+            id: item.id,
+            name: item.title,
+            price: Number(item.price),
+            unit: "unit",
+            seller: "VLCP Seller",
+            category: "Vegetables",
+            images: Array.isArray(item.images)
+              ? item.images.filter((image): image is string => typeof image === "string")
+              : [],
+          }));
+
+          const deduped = Array.from(new Map(normalized.map((product) => [product.id, product])).values());
+          setBackendProducts(deduped);
+        } catch {
+          setBackendProducts([]);
+        }
       }
 
-      loadSellerProducts();
+      loadProducts();
     }, [])
   );
 
-  const allProducts = useMemo(() => [...products, ...sellerProducts], [sellerProducts]);
+  const allProducts = useMemo(() => backendProducts, [backendProducts]);
 
   const filteredCategories = useMemo(() => {
     const q = query.trim().toLowerCase();
