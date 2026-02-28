@@ -1,10 +1,18 @@
 import { useMemo, useState } from "react";
 import { Alert, Pressable, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
-import { setAuthToken } from "./lib/storage";
+import { api } from "./lib/api";
+import { setAuthToken, setStoredUserRole } from "./lib/storage";
 import { useTheme } from "./theme/ThemeProvider";
 
 type LoginMode = "phone" | "email";
+
+type LoginResponse = {
+  accessToken: string;
+  user: {
+    role: "customer" | "seller" | "godown" | "delivery" | "admin";
+  };
+};
 
 const phoneRegex = /^\d{10}$/;
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -19,7 +27,7 @@ export default function Login() {
 
   const validPhone = phoneRegex.test(phone.trim());
   const validEmail = emailRegex.test(email.trim().toLowerCase());
-  const validPassword = password.trim().length >= 6;
+  const validPassword = password.trim().length >= 1;
 
   const canContinue = useMemo(() => {
     if (isSubmitting) {
@@ -39,19 +47,33 @@ export default function Login() {
         "Invalid details",
         mode === "phone"
           ? "Enter a valid 10-digit phone number."
-          : "Enter a valid email and password (min 6 chars)."
+          : "Email and password are required."
       );
+      return;
+    }
+
+    if (mode === "phone") {
+      Alert.alert("Email login only", "Phone login is not enabled on this backend yet.");
       return;
     }
 
     setIsSubmitting(true);
 
-    const identity = mode === "phone" ? phone.trim() : email.trim().toLowerCase();
-    const token = `token_${mode}_${identity}_${Date.now()}`;
+    try {
+      const response = await api.post<LoginResponse>("/auth/login", {
+        email: email.trim().toLowerCase(),
+        password,
+      });
 
-    await setAuthToken(token);
-    setIsSubmitting(false);
-    router.replace("/(tabs)");
+      await setAuthToken(response.accessToken);
+      await setStoredUserRole(response.user.role);
+      router.replace("/(tabs)");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to login";
+      Alert.alert("Login failed", message);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -126,7 +148,7 @@ export default function Login() {
           <TextInput
             value={password}
             onChangeText={setPassword}
-            placeholder="Minimum 6 characters"
+            placeholder="Enter your password"
             secureTextEntry
             style={{
               marginTop: 8,

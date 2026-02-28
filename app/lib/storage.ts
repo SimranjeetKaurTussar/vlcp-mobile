@@ -1,5 +1,17 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+const SecureStore = (() => {
+  try {
+    return require("expo-secure-store") as {
+      getItemAsync: (key: string) => Promise<string | null>;
+      setItemAsync: (key: string, value: string) => Promise<void>;
+      deleteItemAsync: (key: string) => Promise<void>;
+    };
+  } catch {
+    return null;
+  }
+})();
+
 export type ThemeMode = "light" | "dark" | "system";
 
 export type SellerProduct = {
@@ -61,14 +73,28 @@ export const ORDERS_KEY = "orders_history";
 
 
 export async function getAuthToken() {
+  if (SecureStore) {
+    return (await SecureStore.getItemAsync(AUTH_TOKEN_KEY)) ?? "";
+  }
+
   return (await AsyncStorage.getItem(AUTH_TOKEN_KEY)) ?? "";
 }
 
 export async function setAuthToken(token: string) {
+  if (SecureStore) {
+    await SecureStore.setItemAsync(AUTH_TOKEN_KEY, token);
+    return;
+  }
+
   await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
 }
 
 export async function clearAuthToken() {
+  if (SecureStore) {
+    await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
+    return;
+  }
+
   await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
 }
 

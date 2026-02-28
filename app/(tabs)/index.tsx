@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, useCallback } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,13 +8,14 @@ import {
   Animated,
   Image,
   FlatList,
+  ActivityIndicator,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { categories, productImagePlaceholder, products } from "../lib/data";
+import { categories, productImagePlaceholder, setProducts, type AppProduct } from "../lib/data";
 import { useCart } from "../lib/cart";
-import { router, useFocusEffect } from "expo-router";
+import { router } from "expo-router";
 import { useTheme } from "../theme/ThemeProvider";
-import { getSellerProducts, type SellerProduct } from "../lib/storage";
+import { api } from "../lib/api";
 import { useT } from "../i18n/useT";
 
 export default function Home() {
@@ -24,7 +25,7 @@ export default function Home() {
 
   const [query, setQuery] = useState("");
   const [activeCat, setActiveCat] = useState<string>("All");
-  const [sellerProducts, setSellerProducts] = useState<SellerProduct[]>([]);
+  const [backendProducts, setBackendProducts] = useState<AppProduct[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
 
   const [toast, setToast] = useState<string>("");
@@ -70,20 +71,49 @@ export default function Home() {
     }).start(() => setPressedCardId(null));
   }
 
-  useFocusEffect(
-    useCallback(() => {
-      async function loadSellerProducts() {
-        setIsLoadingProducts(true);
-        const stored = await getSellerProducts();
-        setSellerProducts(stored);
+  useEffect(() => {
+    async function loadProducts() {
+      setIsLoadingProducts(true);
+      try {
+        const response = await api.get<{
+          items: Array<{
+            id: string;
+            title: string;
+            price: number | string;
+            images: unknown;
+          }>;
+        }>("/products");
+
+        const normalized = response.items.map((item) => {
+          const images = Array.isArray(item.images)
+            ? item.images.filter((image): image is string => typeof image === "string")
+            : [];
+
+          return {
+            id: item.id,
+            name: item.title,
+            price: Number(item.price),
+            unit: "unit",
+            seller: "VLCP Seller",
+            category: "Vegetables",
+            images,
+          };
+        });
+
+        setProducts(normalized);
+        setBackendProducts(normalized);
+      } catch {
+        setProducts([]);
+        setBackendProducts([]);
+      } finally {
         setIsLoadingProducts(false);
       }
+    }
 
-      loadSellerProducts();
-    }, [])
-  );
+    loadProducts();
+  }, []);
 
-  const allProducts = useMemo(() => [...products, ...sellerProducts], [sellerProducts]);
+  const allProducts = useMemo(() => backendProducts, [backendProducts]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -325,25 +355,7 @@ export default function Home() {
               Products
             </Text>
 
-            {isLoadingProducts
-              ? [1, 2].map((key) => (
-                  <View
-                    key={`skeleton_${key}`}
-                    style={{
-                      marginBottom: spacing.sm,
-                      borderWidth: 1,
-                      borderColor: colors.border,
-                      borderRadius: radius.lg,
-                      padding: spacing.md,
-                      backgroundColor: colors.surface,
-                    }}
-                  >
-                    <View style={{ height: 140, borderRadius: radius.md, backgroundColor: colors.background }} />
-                    <View style={{ marginTop: 10, height: 14, borderRadius: 8, backgroundColor: colors.background }} />
-                    <View style={{ marginTop: 8, height: 12, borderRadius: 8, backgroundColor: colors.background }} />
-                  </View>
-                ))
-              : null}
+            {isLoadingProducts ? <ActivityIndicator style={{ marginTop: spacing.sm }} color={colors.primary} /> : null}
           </>
         }
         ListEmptyComponent={
@@ -361,8 +373,8 @@ export default function Home() {
               }}
             >
               <Ionicons name="search-outline" size={28} color={colors.mutedText} />
-              <Text style={{ marginTop: 10, color: colors.text, fontWeight: "800" }}>No results found</Text>
-              <Text style={{ marginTop: 4, color: colors.mutedText }}>Try another search</Text>
+              <Text style={{ marginTop: 10, color: colors.text, fontWeight: "800" }}>No products found</Text>
+              <Text style={{ marginTop: 4, color: colors.mutedText }}>Please check back later.</Text>
             </View>
           ) : null
         }

@@ -1,10 +1,11 @@
 import { Tabs, router, useFocusEffect } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Text } from "react-native";
 import { useCart } from "../lib/cart";
 import { getAuthToken, getStoredUserRole, type UserRole } from "../lib/storage";
 import { useTheme } from "../theme/ThemeProvider";
+import { setUnauthorizedHandler } from "../lib/api";
 
 export default function TabsLayout() {
   const { items } = useCart();
@@ -32,7 +33,16 @@ export default function TabsLayout() {
     }, [])
   );
 
-  const showSellerTab = role === "seller" || role === "admin";
+  const showSellerTab = false;
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setAuthorized(false);
+      router.replace("/login");
+    });
+
+    return () => setUnauthorizedHandler(null);
+  }, []);
 
   if (!authorized) {
     return null;
