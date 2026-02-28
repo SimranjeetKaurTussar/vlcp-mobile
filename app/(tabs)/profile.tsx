@@ -14,14 +14,11 @@ import {
 import {
   getStoredAddress,
   getStoredCustomerRefundUpiId,
-  getStoredUserRole,
   setStoredAddress,
   setStoredCustomerRefundUpiId,
-  setStoredUserRole,
   clearAuthToken,
   type AppLanguage,
 } from "../lib/storage";
-import type { UserRole } from "../lib/storage";
 import { useT } from "../i18n/useT";
 
 export default function Profile() {
@@ -32,7 +29,6 @@ export default function Profile() {
   const [address, setAddress] = useState("");
   const [platformReceiverUpi, setPlatformReceiverUpi] = useState(platformUpiId);
   const [refundUpi, setRefundUpi] = useState("");
-  const [role, setRole] = useState<UserRole>("customer");
 
   useEffect(() => {
     async function hydrateBusinessSettings() {
@@ -42,7 +38,6 @@ export default function Profile() {
       setPlatformReceiverUpi(platformUpiId);
       setAddress(await getStoredAddress());
       setRefundUpi(await getStoredCustomerRefundUpiId());
-      setRole(await getStoredUserRole());
     }
 
     hydrateBusinessSettings();
@@ -51,7 +46,6 @@ export default function Profile() {
 
   async function logout() {
     await clearAuthToken();
-    await setStoredUserRole("customer");
     router.replace("/login");
   }
 
@@ -63,7 +57,6 @@ export default function Profile() {
     await updatePlatformUpiId(platformReceiverUpi);
     await setStoredAddress(address);
     await setStoredCustomerRefundUpiId(refundUpi);
-    await setStoredUserRole(role);
 
     setName(name.trim() || "VLCP");
     setNumber(cleanNumber);
@@ -235,31 +228,6 @@ export default function Profile() {
       />
       <Text style={{ marginTop: 6, color: colors.mutedText, fontSize: 12 }}>Only for refunds to this customer profile, not payment receiving.</Text>
 
-      <Text style={{ marginTop: 20, color: colors.mutedText, fontWeight: "600" }}>Role</Text>
-      <View style={{ flexDirection: "row", marginTop: 10, gap: 10, flexWrap: "wrap" }}>
-        {(["customer", "seller", "godown", "delivery", "admin"] as const).map((option) => {
-          const active = role === option;
-
-          return (
-            <Pressable
-              key={option}
-              onPress={() => setRole(option)}
-              style={{
-                paddingVertical: 10,
-                paddingHorizontal: 14,
-                borderRadius: 999,
-                borderWidth: 1,
-                borderColor: active ? colors.primary : colors.border,
-                backgroundColor: active ? colors.primary : colors.surface,
-              }}
-            >
-              <Text style={{ color: active ? colors.onPrimary : colors.text, fontWeight: "700", textTransform: "capitalize" }}>
-                {option}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
       <Text style={{ marginTop: 20, color: colors.mutedText, fontWeight: "600" }}>
         {t("profile_language")}
       </Text>
