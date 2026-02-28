@@ -5,6 +5,8 @@ export type Product = {
   name: string;
   price: number;
   unit: string;
+  seller?: string;
+  category?: string;
 };
 
 type CartItem = Product & { qty: number };
@@ -27,7 +29,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems((prev) => {
       const found = prev.find((i) => i.id === product.id);
       if (found) {
-        return prev.map((i) => (i.id === product.id ? { ...i, qty: i.qty + 1 } : i));
+        return prev.map((i) =>
+          i.id === product.id ? { ...i, qty: i.qty + 1 } : i,
+        );
       }
       return [...prev, { ...product, qty: 1 }];
     });
@@ -52,11 +56,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const total = useMemo(
     () => items.reduce((sum, i) => sum + i.price * i.qty, 0),
-    [items]
+    [items],
   );
 
   return (
-    <CartContext.Provider value={{ items, addItem, decItem, removeItem, clearCart, total }}>
+    <CartContext.Provider
+      value={{ items, addItem, decItem, removeItem, clearCart, total }}
+    >
       {children}
     </CartContext.Provider>
   );
