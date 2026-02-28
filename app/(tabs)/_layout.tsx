@@ -115,22 +115,20 @@ export default function TabsLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="seller-hub"
-        options={
-          showSellerTab
-            ? {
-                title: "Seller",
-                tabBarIcon: ({ color, focused, size }) => (
-                  <Ionicons name={focused ? "storefront" : "storefront-outline"} size={size} color={color} />
-                ),
-                tabBarLabel: ({ color, focused }) => (
-                  <Text style={{ color, fontWeight: focused ? "800" : "500", fontSize: 12 }}>Seller</Text>
-                ),
-              }
-            : { href: null }
-        }
-      />
+      {showSellerTab ? (
+        <Tabs.Screen
+          name="seller-hub"
+          options={{
+            title: "Seller",
+            tabBarIcon: ({ color, focused, size }) => (
+              <Ionicons name={focused ? "storefront" : "storefront-outline"} size={size} color={color} />
+            ),
+            tabBarLabel: ({ color, focused }) => (
+              <Text style={{ color, fontWeight: focused ? "800" : "500", fontSize: 12 }}>Seller</Text>
+            ),
+          }}
+        />
+      ) : null}
       <Tabs.Screen
         name="cart"
         options={{
