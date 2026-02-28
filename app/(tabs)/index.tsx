@@ -27,6 +27,7 @@ export default function Home() {
   const [activeCat, setActiveCat] = useState<string>("All");
   const [backendProducts, setBackendProducts] = useState<AppProduct[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [productsError, setProductsError] = useState<string | null>(null);
 
   const [toast, setToast] = useState<string>("");
   const toastAnim = useRef(new Animated.Value(0)).current;
@@ -71,9 +72,9 @@ export default function Home() {
     }).start(() => setPressedCardId(null));
   }
 
-  useEffect(() => {
-    async function loadProducts() {
+  async function loadProducts() {
       setIsLoadingProducts(true);
+      setProductsError(null);
       try {
         const response = await api.get<{
           items: Array<{
@@ -105,11 +106,13 @@ export default function Home() {
       } catch {
         setProducts([]);
         setBackendProducts([]);
+        setProductsError("Server not reachable");
       } finally {
         setIsLoadingProducts(false);
       }
     }
 
+  useEffect(() => {
     loadProducts();
   }, []);
 
@@ -288,7 +291,7 @@ export default function Home() {
               <Text style={{ color: colors.primary, fontWeight: "700" }}>View all categories</Text>
             </Pressable>
 
-            {!isLoadingProducts && query.trim().length === 0 ? (
+            {!isLoadingProducts && !productsError && filtered.length > 0 && query.trim().length === 0 ? (
               <>
                 <Text style={{ marginTop: spacing.lg, fontSize: fontSizes.subtitle, fontWeight: "800", color: colors.text }}>
                   Today&apos;s Pick
@@ -351,11 +354,15 @@ export default function Home() {
               </>
             ) : null}
 
-            <Text style={{ marginTop: spacing.lg, marginBottom: spacing.sm, fontSize: fontSizes.subtitle, fontWeight: "800", color: colors.text }}>
-              Products
-            </Text>
+            {isLoadingProducts || filtered.length > 0 ? (
+              <>
+                <Text style={{ marginTop: spacing.lg, marginBottom: spacing.sm, fontSize: fontSizes.subtitle, fontWeight: "800", color: colors.text }}>
+                  Products
+                </Text>
 
-            {isLoadingProducts ? <ActivityIndicator style={{ marginTop: spacing.sm }} color={colors.primary} /> : null}
+                {isLoadingProducts ? <ActivityIndicator style={{ marginTop: spacing.sm }} color={colors.primary} /> : null}
+              </>
+            ) : null}
           </>
         }
         ListEmptyComponent={
@@ -372,9 +379,25 @@ export default function Home() {
                 ...shadows.card,
               }}
             >
-              <Ionicons name="search-outline" size={28} color={colors.mutedText} />
-              <Text style={{ marginTop: 10, color: colors.text, fontWeight: "800" }}>No products found</Text>
-              <Text style={{ marginTop: 4, color: colors.mutedText }}>Please check back later.</Text>
+              <Ionicons name={productsError ? "cloud-offline-outline" : "search-outline"} size={28} color={colors.mutedText} />
+              <Text style={{ marginTop: 10, color: colors.text, fontWeight: "800" }}>
+                {productsError ? "Server not reachable" : "No products available"}
+              </Text>
+              {productsError ? (
+                <Pressable
+                  onPress={loadProducts}
+                  style={({ pressed }) => ({
+                    marginTop: 10,
+                    backgroundColor: colors.primary,
+                    paddingVertical: 10,
+                    paddingHorizontal: 16,
+                    borderRadius: radius.md,
+                    opacity: pressed ? 0.9 : 1,
+                  })}
+                >
+                  <Text style={{ color: colors.onPrimary, fontWeight: "700" }}>Retry</Text>
+                </Pressable>
+              ) : null}
             </View>
           ) : null
         }

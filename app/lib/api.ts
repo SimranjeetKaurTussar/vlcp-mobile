@@ -41,6 +41,10 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
   });
 
+  if (response.status === 401 && path === "/auth/login") {
+    throw new Error("Invalid email or password");
+  }
+
   if (response.status === 401) {
     await handleUnauthorized();
     throw new Error("Session expired");

@@ -33,7 +33,7 @@ export default function TabsLayout() {
     }, [])
   );
 
-  const showSellerTab = false;
+  const showSellerTab = role === "seller";
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
@@ -102,7 +102,7 @@ export default function TabsLayout() {
           options={{
             title: "Seller",
             tabBarIcon: ({ color, focused, size }) => (
-              <Ionicons name={focused ? "briefcase" : "briefcase-outline"} size={size} color={color} />
+              <Ionicons name={focused ? "storefront" : "storefront-outline"} size={size} color={color} />
             ),
             tabBarLabel: ({ color, focused }) => (
               <Text style={{ color, fontWeight: focused ? "800" : "500", fontSize: 12 }}>Seller</Text>

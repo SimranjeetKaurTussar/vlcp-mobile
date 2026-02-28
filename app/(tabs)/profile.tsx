@@ -18,6 +18,7 @@ import {
   setStoredAddress,
   setStoredCustomerRefundUpiId,
   setStoredUserRole,
+  clearAuthToken,
   type AppLanguage,
 } from "../lib/storage";
 import type { UserRole } from "../lib/storage";
@@ -46,6 +47,13 @@ export default function Profile() {
 
     hydrateBusinessSettings();
   }, []);
+
+
+  async function logout() {
+    await clearAuthToken();
+    await setStoredUserRole("customer");
+    router.replace("/login");
+  }
 
   async function saveBusinessSettings() {
     const cleanNumber = number.replace(/\D/g, "");
@@ -296,6 +304,23 @@ export default function Profile() {
       >
         <Text style={{ color: colors.onPrimary, fontWeight: "800" }}>{t("save_settings")}</Text>
       </Pressable>
+
+      <Pressable
+        onPress={logout}
+        style={({ pressed }) => ({
+          marginTop: 12,
+          borderWidth: 1,
+          borderColor: colors.border,
+          backgroundColor: colors.surface,
+          paddingVertical: 12,
+          borderRadius: 12,
+          alignItems: "center",
+          opacity: pressed ? 0.9 : 1,
+        })}
+      >
+        <Text style={{ color: colors.text, fontWeight: "800" }}>Logout</Text>
+      </Pressable>
+
     </ScrollView>
   );
 }
