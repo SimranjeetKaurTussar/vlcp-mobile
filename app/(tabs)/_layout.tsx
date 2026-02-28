@@ -115,25 +115,24 @@ export default function TabsLayout() {
           ),
         }}
       />
+      {/* Keep tab route names/order constant across roles to avoid TabRouter stale-state crashes. */}
       <Tabs.Screen
         name="seller-hub"
-        options={
-          showSellerTab
-            ? {
-                title: "Seller",
-                tabBarIcon: ({ color, focused, size }) => (
-                  <Ionicons name={focused ? "storefront" : "storefront-outline"} size={size} color={color} />
-                ),
-                tabBarLabel: ({ color, focused }) => (
-                  <Text style={{ color, fontWeight: focused ? "800" : "500", fontSize: 12 }}>Seller</Text>
-                ),
-              }
+        options={{
+          title: "Seller",
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons name={focused ? "storefront" : "storefront-outline"} size={size} color={color} />
+          ),
+          tabBarLabel: ({ color, focused }) => (
+            <Text style={{ color, fontWeight: focused ? "800" : "500", fontSize: 12 }}>Seller</Text>
+          ),
+          ...(showSellerTab
+            ? {}
             : {
-                title: "Seller",
                 tabBarButton: () => null,
                 tabBarItemStyle: { display: "none" },
-              }
-        }
+              }),
+        }}
       />
       <Tabs.Screen
         name="cart"
